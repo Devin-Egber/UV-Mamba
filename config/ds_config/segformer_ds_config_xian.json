@@ -21,10 +21,10 @@
   "scheduler": {
     "type": "WarmupDecayLR",
     "params": {
-      "total_num_steps": 8600,
+      "total_num_steps": 3300,
       "warmup_min_lr": 1.0e-6,
       "warmup_max_lr": 0.0002,
-      "warmup_num_steps": 2580
+      "warmup_num_steps": 990
     }
   },
 
@@ -45,7 +45,7 @@
   "tensorboard": {
     "enabled": true,
     "output_path": "log/",
-    "job_name": "segformer"
+    "job_name": "segformer_xian"
   },
   "wall_clock_breakdown": false
 }
