@@ -18,6 +18,24 @@ import matplotlib.pyplot as plt
 
 
 def normalize(imgs_path):
+    """
+    This function is used to normalize the dataset
+
+    The dataset organization should have the following format:
+
+    ├── dataset
+    │   ├── img_dir
+    │   │   ├── train
+    │   │   ├── val
+    │   │   ├── test
+    │   ├── ann_dir
+    │   │   ├── train
+    │   │   ├── val
+    │   │   ├── test
+
+    :param imgs_path: the path of the ima_dir
+    :return: norm_mean, norm_std
+    """
 
     img_h, img_w = 1024, 1024
     means, stdevs = [], []
@@ -49,8 +67,8 @@ def normalize(imgs_path):
     # BGR --> RGB
     means.reverse()
     stdevs.reverse()
-    print("Mean = {}".format(means))
-    print("Std = {}".format(stdevs))
+    print("normMean = {}".format(means))
+    print("normStd = {}".format(stdevs))
 
 
 def get_dataset(config):

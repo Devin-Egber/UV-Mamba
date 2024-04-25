@@ -4,7 +4,9 @@ MASTER_PORT=32990
 
 #CONFIG_FILE="config/uv/segformer/segformer_beijing.yaml"
 
-CONFIG_FILE="config/uv/segformer/segformer_xian.yaml"
+CONFIG_FILE="config/uv/segformer/segformer_shenzhen.yaml"
+
+#CONFIG_FILE="config/uv/segformer/segformer_xian.yaml"
 
 
 CUDA_VISIBLE_DEVICES=0 deepspeed --master_port $MASTER_PORT tools/train.py --config_file $CONFIG_FILE

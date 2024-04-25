@@ -7,6 +7,18 @@ import numpy as np
 class UVSegDataset(Dataset):
     def __init__(self, img_path, mode="train", transform=None):
         """
+        The dataset organization should have the following attributes:
+
+        ├── dataset
+        │   ├── img_dir
+        │   │   ├── train
+        │   │   ├── val
+        │   │   ├── test
+        │   ├── ann_dir
+        │   │   ├── train
+        │   │   ├── val
+        │   │   ├── test
+
         Args:
             folder (str): Path to the dataset
             norm (bool): If true, images are standardised using pre-computed
@@ -32,7 +44,7 @@ class UVSegDataset(Dataset):
 
         image = np.array(Image.open(img_path).convert("RGB"))
         mask = np.array(Image.open(mask_path).convert("L"))
-        mask[mask==38] = 1
+        mask[mask != 0] = 1
 
         if self.transform:
             augmentations = self.transform(image=image, mask=mask)

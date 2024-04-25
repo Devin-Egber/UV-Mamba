@@ -1,5 +1,5 @@
 {
-  "train_batch_size": 4,
+  "train_batch_size": 64,
   "gradient_accumulation_steps": 1,
   "steps_per_print": 1000,
 
@@ -21,10 +21,10 @@
   "scheduler": {
     "type": "WarmupDecayLR",
     "params": {
-      "total_num_steps": 8600,
+      "total_num_steps": 43700,
       "warmup_min_lr": 1.0e-6,
       "warmup_max_lr": 0.0002,
-      "warmup_num_steps": 2580
+      "warmup_num_steps": 13110
     }
   },
 
@@ -45,7 +45,7 @@
   "tensorboard": {
     "enabled": true,
     "output_path": "log/",
-    "job_name": "segformer_beijing"
+    "job_name": "segformer_shenzhen"
   },
   "wall_clock_breakdown": false
 }

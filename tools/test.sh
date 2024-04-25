@@ -6,7 +6,9 @@ MASTER_PORT=32990
 
 #CONFIG_FILE="config/uv/segformer/segformer_beijing.yaml"
 
-CONFIG_FILE="config/uv/segformer/segformer_xian.yaml"
+CONFIG_FILE="config/uv/segformer/segformer_shenzhen.yaml"
+
+#CONFIG_FILE="config/uv/segformer/segformer_xian.yaml"
 
 
 # test one of five fold script
