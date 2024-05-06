@@ -2,11 +2,11 @@ from torch.utils import data
 import numpy as np
 import cv2
 import os
-from dataset.uv_seg import UVSegDataset
+from dataset.uv.uv_seg import UVSegDataset
+from dataset.city.cityscapes import CityscapesSegmentation
 import json
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
-import matplotlib.pyplot as plt
 
 
 # import warnings
@@ -118,9 +118,16 @@ def get_dataset(config):
         ToTensorV2()
     ])
 
-    train_dataset = UVSegDataset(img_path=img_path, mode="train", transform=train_transform)
-    val_dataset = UVSegDataset(img_path=img_path, mode="val", transform=val_transform)
-    test_dataset = UVSegDataset(img_path=img_path, mode="test", transform=test_transform)
+    if dataset_config.dataset == "uvseg":
+        train_dataset = UVSegDataset(img_path=img_path, mode="train", transform=train_transform)
+        val_dataset = UVSegDataset(img_path=img_path, mode="val", transform=val_transform)
+        test_dataset = UVSegDataset(img_path=img_path, mode="test", transform=test_transform)
+    elif dataset_config.dataset == "cityscapes":
+        train_dataset = CityscapesSegmentation(root=img_path, mode="train", transform=train_transform)
+        val_dataset = CityscapesSegmentation(root=img_path, mode="val", transform=val_transform)
+        test_dataset = CityscapesSegmentation(root=img_path, mode="test", transform=test_transform)
+    else:
+        raise NotImplementedError
 
     return train_dataset, val_dataset, test_dataset
 

@@ -19,10 +19,6 @@ class UVSegDataset(Dataset):
         │   │   ├── val
         │   │   ├── test
 
-        Args:
-            folder (str): Path to the dataset
-            norm (bool): If true, images are standardised using pre-computed
-                channel-wise means and standard deviations.
         """
         super(UVSegDataset, self).__init__()
         self.folder = img_path
@@ -43,7 +39,7 @@ class UVSegDataset(Dataset):
         mask_path = os.path.join(self.mask_dir, self.images[index])
 
         image = np.array(Image.open(img_path).convert("RGB"))
-        mask = np.array(Image.open(mask_path).convert("L"))
+        mask = np.array(Image.open(mask_path), dtype=np.uint8)
         mask[mask != 0] = 1
 
         if self.transform:

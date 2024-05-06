@@ -207,7 +207,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_file',
                         type=str,
-                        default="config/uv/segformer/segformer_shenzhen.yaml",
+                        default="config/uv/segformer/segformer_beijing.yaml",
                         help='Configuration (.json) file to use')
     parser.add_argument('--rdm_seed', type=int, default=None, help='Random seed')
     parser.add_argument('--local_rank', type=int, default=-1,

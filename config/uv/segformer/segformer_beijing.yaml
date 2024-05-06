@@ -3,6 +3,7 @@ BACKBONE: "segformer"
 
 
 DATASET:
+  dataset: uvseg
   dataset_folder: "/home/pod/shared-nvme/uv_data/beijing"
   num_workers: 8
   target: "semantic"
