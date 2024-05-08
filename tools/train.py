@@ -11,7 +11,7 @@ from utils.model_runner import run_iterate, init_random_seed
 from utils.distributed_utils import get_dist_info, all_metrics_reduce, dist_barrier, logger
 
 from utils.dataset_utils import get_dataset, build_uv_dataloader
-# from src.losses import get_loss
+from losses import get_loss
 
 # from src.utils.lr_scheduler import build_schduler
 
@@ -112,8 +112,7 @@ def main(config):
     logger.info(f"trainable params: {trainable_params} || all params: {all_params} "
                 f"|| trainable (%): {trainable_params / all_params * 100}")
 
-    # criterion = get_loss(config, device=device)
-    criterion = nn.CrossEntropyLoss()
+    criterion = get_loss(dataset_config)
 
     # Training loop
     trainlog = {}

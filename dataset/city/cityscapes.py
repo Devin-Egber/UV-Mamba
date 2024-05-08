@@ -20,14 +20,13 @@ class CityscapesSegmentation(Dataset):
 
     """
 
-    NUM_CLASSES = 19
-
     def __init__(self, root, mode="train", transform=None):
 
         self.root = root
         self.mode = mode
         self.transform = transform
         self.files = {}
+        self.NUM_CLASSES = 19
 
         self.images_base = os.path.join(self.root, 'leftImg8bit', self.mode)
         self.annotations_base = os.path.join(self.root, 'gtFine', self.mode)
@@ -41,7 +40,7 @@ class CityscapesSegmentation(Dataset):
                             'sky', 'person', 'rider', 'car', 'truck', 'bus', 'train', \
                             'motorcycle', 'bicycle']
 
-        self.ignore_index = 0
+        self.ignore_index = 255
         self.class_map = dict(zip(self.valid_classes, range(self.NUM_CLASSES)))
 
         if not self.files[mode]:

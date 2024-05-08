@@ -122,14 +122,17 @@ def get_dataset(config):
         train_dataset = UVSegDataset(img_path=img_path, mode="train", transform=train_transform)
         val_dataset = UVSegDataset(img_path=img_path, mode="val", transform=val_transform)
         test_dataset = UVSegDataset(img_path=img_path, mode="test", transform=test_transform)
+        return train_dataset, val_dataset, test_dataset
+
     elif dataset_config.dataset == "cityscapes":
         train_dataset = CityscapesSegmentation(root=img_path, mode="train", transform=train_transform)
         val_dataset = CityscapesSegmentation(root=img_path, mode="val", transform=val_transform)
         test_dataset = CityscapesSegmentation(root=img_path, mode="test", transform=test_transform)
+        return train_dataset, val_dataset, test_dataset
+
     else:
         raise NotImplementedError
 
-    return train_dataset, val_dataset, test_dataset
 
 
 def build_uv_dataloader(

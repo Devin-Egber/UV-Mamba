@@ -8,7 +8,6 @@ from utils.visualisation_utils import save_images
 from utils.distributed_utils import get_dist_info, logger
 
 
-
 def run_iterate(model, data_loader, criterion, config, mode="train", device=None, dtype=torch.float32):
 
     model.train() if mode == "train" else model.eval()
