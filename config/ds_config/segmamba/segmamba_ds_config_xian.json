@@ -1,0 +1,51 @@
+{
+  "train_batch_size": 4,
+  "gradient_accumulation_steps": 1,
+  "steps_per_print": 1000,
+
+
+  "optimizer": {
+    "type": "AdamW",
+    "params": {
+      "lr": 0.0002,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "eps": 1.0e-8,
+      "weight_decay": 0.0
+    }
+  },
+
+
+  "scheduler": {
+    "type": "WarmupDecayLR",
+    "params": {
+      "total_num_steps": 3300,
+      "warmup_min_lr": 1.0e-6,
+      "warmup_max_lr": 0.0002,
+      "warmup_num_steps": 990
+    }
+  },
+
+  "bf16": {
+    "enabled": false
+  },
+
+  "fp16": {
+    "enabled": false,
+    "fp16_master_weights_and_grads": false,
+    "loss_scale": 0,
+    "loss_scale_window": 500,
+    "hysteresis": 2,
+    "min_loss_scale": 1,
+    "initial_scale_power": 15
+  },
+
+  "tensorboard": {
+    "enabled": true,
+    "output_path": "log/",
+    "job_name": "segformer_xian"
+  },
+  "wall_clock_breakdown": false
+}

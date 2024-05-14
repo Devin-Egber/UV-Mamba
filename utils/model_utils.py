@@ -12,7 +12,11 @@ def get_model(config):
 
     if config.BACKBONE == "segformer":
         from models.Segformer.segformer import SegFormer
-        base_model = SegFormer(num_classes=2, phi='b0', pretrained=True)
+        base_model = SegFormer(num_classes=2, phi='b0', pretrained=False)
+
+    if config.BACKBONE == "segmamba":
+        from models.Segmamba.segmamba import SegMamba
+        base_model = SegMamba(num_classes=2, phi='b0', pretrained=False)
 
     elif config.BACKBONE == "exchanger_unet":
         from src.backbones.exchanger.models import ExchangerUnet

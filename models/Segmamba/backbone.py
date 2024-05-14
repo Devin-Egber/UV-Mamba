@@ -5,6 +5,8 @@ from functools import partial
 
 import torch
 import torch.nn as nn
+from transformers.models.mamba.modeling_mamba import MambaMixer
+import argparse
 
 
 def _no_grad_trunc_normal_(tensor, mean, std, a, b):
@@ -313,8 +315,80 @@ class Block(nn.Module):
         x = x + self.drop_path(self.mlp(self.norm2(x), H, W))
         return x
 
+class MambaBlock(nn.Module):
+    def __init__(self, embed_dims, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop=0., attn_drop=0.,
+                 drop_path=0., act_layer=GELU, norm_layer=nn.LayerNorm, sr_ratio=1, depth=0):
+        super().__init__()
+        self.norm1 = norm_layer(embed_dims)
 
-class MixVisionTransformer(nn.Module):
+        # self.attn = Attention(
+        #     dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale,
+        #     attn_drop=attn_drop, proj_drop=drop, sr_ratio=sr_ratio
+        # )
+
+        self.mamba_layer = nn.ModuleList()
+
+        for i in range(depth):
+            _layer_cfg = dict(
+                hidden_size=embed_dims,
+                state_size=16,
+                # intermediate_size=self.arch_settings.get('feedforward_channels', self.embed_dims * 2),
+                intermediate_size=384,
+                conv_kernel=4,
+                # time_step_rank=math.ceil(embed_dims / 16),
+                time_step_rank=math.ceil(embed_dims / 4),
+                use_conv_bias=True,
+                hidden_act="silu",
+                use_bias=False,
+            )
+            config = argparse.Namespace(**_layer_cfg)
+            self.mamba_layer.append(MambaMixer(config, i))
+
+        self.norm2 = norm_layer(embed_dims)
+        self.mlp = Mlp(in_features=embed_dims, hidden_features=int(embed_dims * mlp_ratio), act_layer=act_layer, drop=drop)
+
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+        elif isinstance(m, nn.Conv2d):
+            fan_out = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+            fan_out //= m.groups
+            m.weight.data.normal_(0, math.sqrt(2.0 / fan_out))
+            if m.bias is not None:
+                m.bias.data.zero_()
+
+    def forward(self, x, H, W):
+        B = x.shape[0]
+        x_inputs = [x, torch.flip(x, [1])]
+        rand_index = torch.randperm(x.size(1))
+        x_inputs.append(x[:, rand_index])
+        x_inputs = torch.cat(x_inputs, dim=0)
+        x = self.norm1(x_inputs)
+        for layer in self.mamba_layer:
+            x = layer(x)
+        forward_x, reverse_x, shuffle_x = torch.split(x_inputs, B, dim=0)
+        reverse_x = torch.flip(reverse_x, [1])
+        # reverse the random index
+        rand_index = torch.argsort(rand_index)
+        shuffle_x = shuffle_x[:, rand_index]
+        x = (forward_x + reverse_x + shuffle_x) / 3
+
+        x = x + self.drop_path(x)
+        x = x + self.drop_path(self.mlp(self.norm2(x), H, W))
+        return x
+
+
+
+class MixVisionMamba(nn.Module):
     def __init__(self, in_chans=3, num_classes=1000, embed_dims=[32, 64, 160, 256],
                  num_heads=[1, 2, 4, 8], mlp_ratios=[4, 4, 4, 4], qkv_bias=False, qk_scale=None, drop_rate=0.,
                  attn_drop_rate=0., drop_path_rate=0., norm_layer=nn.LayerNorm,
@@ -343,11 +417,11 @@ class MixVisionTransformer(nn.Module):
         cur = 0
         self.block1 = nn.ModuleList(
             [
-                Block(
-                    dim=embed_dims[0], num_heads=num_heads[0], mlp_ratio=mlp_ratios[0], qkv_bias=qkv_bias,
+                MambaBlock(
+                    embed_dims=embed_dims[0], num_heads=num_heads[0], mlp_ratio=mlp_ratios[0], qkv_bias=qkv_bias,
                     qk_scale=qk_scale,
                     drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[cur + i], norm_layer=norm_layer,
-                    sr_ratio=sr_ratios[0]
+                    sr_ratio=sr_ratios[0], depth=depths[0]
                 )
                 for i in range(depths[0])
             ]
@@ -369,11 +443,11 @@ class MixVisionTransformer(nn.Module):
         cur += depths[0]
         self.block2 = nn.ModuleList(
             [
-                Block(
-                    dim=embed_dims[1], num_heads=num_heads[1], mlp_ratio=mlp_ratios[1], qkv_bias=qkv_bias,
+                MambaBlock(
+                    embed_dims=embed_dims[1], num_heads=num_heads[1], mlp_ratio=mlp_ratios[1], qkv_bias=qkv_bias,
                     qk_scale=qk_scale,
                     drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[cur + i], norm_layer=norm_layer,
-                    sr_ratio=sr_ratios[1]
+                    sr_ratio=sr_ratios[1], depth=depths[0]
                 )
                 for i in range(depths[1])
             ]
@@ -395,11 +469,11 @@ class MixVisionTransformer(nn.Module):
         cur += depths[1]
         self.block3 = nn.ModuleList(
             [
-                Block(
-                    dim=embed_dims[2], num_heads=num_heads[2], mlp_ratio=mlp_ratios[2], qkv_bias=qkv_bias,
+                MambaBlock(
+                    embed_dims=embed_dims[2], num_heads=num_heads[2], mlp_ratio=mlp_ratios[2], qkv_bias=qkv_bias,
                     qk_scale=qk_scale,
                     drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[cur + i], norm_layer=norm_layer,
-                    sr_ratio=sr_ratios[2]
+                    sr_ratio=sr_ratios[2], depth=depths[0]
                 )
                 for i in range(depths[2])
             ]
@@ -421,11 +495,11 @@ class MixVisionTransformer(nn.Module):
         cur += depths[2]
         self.block4 = nn.ModuleList(
             [
-                Block(
-                    dim=embed_dims[3], num_heads=num_heads[3], mlp_ratio=mlp_ratios[3], qkv_bias=qkv_bias,
+                MambaBlock(
+                    embed_dims=embed_dims[3], num_heads=num_heads[3], mlp_ratio=mlp_ratios[3], qkv_bias=qkv_bias,
                     qk_scale=qk_scale,
                     drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[cur + i], norm_layer=norm_layer,
-                    sr_ratio=sr_ratios[3]
+                    sr_ratio=sr_ratios[3], depth=depths[0]
                 )
                 for i in range(depths[3])
             ]
@@ -496,9 +570,9 @@ class MixVisionTransformer(nn.Module):
         return outs
 
 
-class mit_b0(MixVisionTransformer):
+class mim_b0(MixVisionMamba):
     def __init__(self, pretrained=False):
-        super(mit_b0, self).__init__(
+        super(mim_b0, self).__init__(
             embed_dims=[32, 64, 160, 256], num_heads=[1, 2, 5, 8], mlp_ratios=[4, 4, 4, 4],
             qkv_bias=True, norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[2, 2, 2, 2], sr_ratios=[8, 4, 2, 1],
             drop_rate=0.0, drop_path_rate=0.1)
@@ -507,9 +581,9 @@ class mit_b0(MixVisionTransformer):
             self.load_state_dict(torch.load("/home/pod/shared-nvme/segformer_weights/segformer_b0_backbone_weights.pth"), strict=False)
 
 
-class mit_b1(MixVisionTransformer):
+class mim_b1(MixVisionMamba):
     def __init__(self, pretrained=False):
-        super(mit_b1, self).__init__(
+        super(mim_b1, self).__init__(
             embed_dims=[64, 128, 320, 512], num_heads=[1, 2, 5, 8], mlp_ratios=[4, 4, 4, 4],
             qkv_bias=True, norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[2, 2, 2, 2], sr_ratios=[8, 4, 2, 1],
             drop_rate=0.0, drop_path_rate=0.1)
@@ -518,9 +592,9 @@ class mit_b1(MixVisionTransformer):
             self.load_state_dict(torch.load("model_data/segformer_b1_backbone_weights.pth"), strict=False)
 
 
-class mit_b2(MixVisionTransformer):
+class mim_b2(MixVisionMamba):
     def __init__(self, pretrained=False):
-        super(mit_b2, self).__init__(
+        super(mim_b2, self).__init__(
             embed_dims=[64, 128, 320, 512], num_heads=[1, 2, 5, 8], mlp_ratios=[4, 4, 4, 4],
             qkv_bias=True, norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 4, 6, 3], sr_ratios=[8, 4, 2, 1],
             drop_rate=0.0, drop_path_rate=0.1)
@@ -529,9 +603,9 @@ class mit_b2(MixVisionTransformer):
             self.load_state_dict(torch.load("model_data/segformer_b2_backbone_weights.pth"), strict=False)
 
 
-class mit_b3(MixVisionTransformer):
+class mim_b3(MixVisionMamba):
     def __init__(self, pretrained=False):
-        super(mit_b3, self).__init__(
+        super(mim_b3, self).__init__(
             embed_dims=[64, 128, 320, 512], num_heads=[1, 2, 5, 8], mlp_ratios=[4, 4, 4, 4],
             qkv_bias=True, norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 4, 18, 3], sr_ratios=[8, 4, 2, 1],
             drop_rate=0.0, drop_path_rate=0.1)
@@ -540,9 +614,9 @@ class mit_b3(MixVisionTransformer):
             self.load_state_dict(torch.load("model_data/segformer_b3_backbone_weights.pth"), strict=False)
 
 
-class mit_b4(MixVisionTransformer):
+class mim_b4(MixVisionMamba):
     def __init__(self, pretrained=False):
-        super(mit_b4, self).__init__(
+        super(mim_b4, self).__init__(
             embed_dims=[64, 128, 320, 512], num_heads=[1, 2, 5, 8], mlp_ratios=[4, 4, 4, 4],
             qkv_bias=True, norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 8, 27, 3], sr_ratios=[8, 4, 2, 1],
             drop_rate=0.0, drop_path_rate=0.1)
@@ -551,9 +625,9 @@ class mit_b4(MixVisionTransformer):
             self.load_state_dict(torch.load("model_data/segformer_b4_backbone_weights.pth"), strict=False)
 
 
-class mit_b5(MixVisionTransformer):
+class mim_b5(MixVisionMamba):
     def __init__(self, pretrained=False):
-        super(mit_b5, self).__init__(
+        super(mim_b5, self).__init__(
             embed_dims=[64, 128, 320, 512], num_heads=[1, 2, 5, 8], mlp_ratios=[4, 4, 4, 4],
             qkv_bias=True, norm_layer=partial(nn.LayerNorm, eps=1e-6), depths=[3, 6, 40, 3], sr_ratios=[8, 4, 2, 1],
             drop_rate=0.0, drop_path_rate=0.1)

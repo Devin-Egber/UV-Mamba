@@ -1,5 +1,5 @@
 MODE: "semantic"
-BACKBONE: "segformer"
+BACKBONE: "segmamba"
 
 
 DATASET:
@@ -35,7 +35,7 @@ MODEL:
 
 PIPELINE:
   train:
-    epochs: 100
+    epochs: 200
     rdm_seed: null
     display_step: 20
     val_every: 1
@@ -43,5 +43,5 @@ PIPELINE:
     save_total_limit: 5
 
 PATH:
-  ds_config: "config/ds_config/segmamba_ds_config_beijing.json"
-  res_dir: "result/segformer_beijing"
+  ds_config: "config/ds_config/segmamba/segmamba_ds_config_beijing.json"
+  res_dir: "result/segmamba_beijing_epoch200_lr_0.001"
