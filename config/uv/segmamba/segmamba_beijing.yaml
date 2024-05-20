@@ -4,11 +4,11 @@ BACKBONE: "segmamba"
 
 DATASET:
   dataset: uvseg
-  dataset_folder: "/data/dataset/uv_data/beijing"
+  dataset_folder: "/data/dataset/uv_beijing_crop/beijing-256"
   num_workers: 8
   target: "semantic"
   norm: True
-  crop_size: [1024, 1024]
+  crop_size: [256, 256]
   num_classes: 2
   ignore_index: -1
   avoid_index: -1
@@ -35,7 +35,7 @@ MODEL:
 
 PIPELINE:
   train:
-    epochs: 200
+    epochs: 100
     rdm_seed: null
     display_step: 20
     val_every: 1
@@ -44,4 +44,4 @@ PIPELINE:
 
 PATH:
   ds_config: "config/ds_config/segmamba/segmamba_ds_config_beijing.json"
-  res_dir: "result/segmamba_beijing_deform2"
+  res_dir: "result/segmamba_beijing_deform_crop"

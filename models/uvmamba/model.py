@@ -1,6 +1,8 @@
 import torch.nn as nn
+import torch.nn.functional as F
 from .head import SegformerHead
 from .backbone import MixVisionMamba
+# from .segformer_backbone import MixVisionTransformer
 
 
 class UVMamba(nn.Module):
@@ -12,7 +14,7 @@ class UVMamba(nn.Module):
 
     def forward(self, inputs):
         H, W = inputs.size(2), inputs.size(3)
-
         x = self.backbone.forward(inputs)
         x = self.decode_head.forward(x)
+        x = F.interpolate(x, size=(H, W), mode='bilinear', align_corners=True)
         return x

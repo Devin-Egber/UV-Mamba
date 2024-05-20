@@ -16,5 +16,5 @@ CONFIG_FILE="config/uv/segmamba/segmamba_beijing.yaml"
 
 
 # test one of five fold script
-weight_folder="weights/global_step7654"
+weight_folder="weights/global_step5590"
 CUDA_VISIBLE_DEVICES=0 deepspeed --master_port $MASTER_PORT tools/test.py --config_file $CONFIG_FILE --weight_folder $weight_folder

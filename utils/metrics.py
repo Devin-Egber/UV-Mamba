@@ -1,15 +1,9 @@
-"""
-Taken from https://github.com/davidtvs/PyTorch-ENet/blob/master/metric/confusionmatrix.py
-"""
-
 import numpy as np
 import torch
 import pandas as pd
 
+
 class Metric(object):
-    """Base class for all metrics.
-    From: https://github.com/pytorch/tnt/blob/master/torchnet/meter/meter.py
-    """
 
     def reset(self):
         pass

@@ -8,7 +8,9 @@ import argparse
 
 from .utils import nchw_to_nlc, nlc_to_nchw
 from .utils import trunc_normal_init, constant_init, normal_init
-from .module import PatchEmbed, DropPath
+from .module import DropPath
+from .module import PatchEmbed, PatchEmbedDeform, PatchEmbedModulatedDeform
+from .module import DeformableConv2d, ModulatedDeformConv2d
 
 
 class MixFFN(nn.Module):
@@ -80,6 +82,71 @@ class MixFFN(nn.Module):
         return identity + self.dropout_layer(out)
 
 
+class MixFFNDeform(nn.Module):
+    """An implementation of MixFFN of Segformer.
+
+    The differences between MixFFN & FFN:
+        1. Use 1X1 Conv to replace Linear layer.
+        2. Introduce 3X3 Conv to encode positional information.
+    Args:
+        embed_dims (int): The feature dimension. Same as
+            `MultiheadAttention`. Defaults: 256.
+        feedforward_channels (int): The hidden dimension of FFNs.
+            Defaults: 1024.
+        ffn_drop (float, optional): Probability of an element to be
+            zeroed in FFN. Default 0.0.
+        dropout_layer (obj:`ConfigDict`): The dropout_layer used
+            when adding the shortcut.
+    """
+
+    def __init__(self,
+                 embed_dims,
+                 feedforward_channels,
+                 ffn_drop=0.,
+                 dropout_layer=None):
+        super().__init__()
+
+        self.embed_dims = embed_dims
+        self.feedforward_channels = feedforward_channels
+        self.activate = nn.GELU()
+
+        in_channels = embed_dims
+
+        fc1 = nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=feedforward_channels,
+            kernel_size=1,
+            stride=1)
+
+        # 3x3 depth wise conv to provide positional encode information
+        pe_conv = DeformableConv2d(
+            in_channels=feedforward_channels,
+            out_channels=feedforward_channels,
+            kernel_size=3,
+            stride=1,
+            padding=(3 - 1) // 2)
+
+        fc2 = nn.Conv2d(
+            in_channels=feedforward_channels,
+            out_channels=in_channels,
+            kernel_size=1,
+            stride=1)
+
+        drop = nn.Dropout(ffn_drop)
+        layers = [fc1, pe_conv, self.activate, drop, fc2, drop]
+        self.layers = nn.Sequential(*layers)
+        self.dropout_layer = DropPath(
+            dropout_layer['drop_prob']) if dropout_layer else torch.nn.Identity()
+
+    def forward(self, x, hw_shape, identity=None):
+        out = nlc_to_nchw(x, hw_shape)
+        out = self.layers(out)
+        out = nchw_to_nlc(out)
+        if identity is None:
+            identity = x
+        return identity + self.dropout_layer(out)
+
+
 class MambaEncoderLayer(nn.Module):
     """Implements one encoder layer in Segformer.
 
@@ -135,7 +202,7 @@ class MambaEncoderLayer(nn.Module):
 
         self.norm2 = nn.LayerNorm(embed_dims)
 
-        self.ffn = MixFFN(
+        self.ffn = MixFFNDeform(
             embed_dims=embed_dims,
             feedforward_channels=feedforward_channels,
             ffn_drop=drop_rate,
@@ -255,7 +322,7 @@ class MixVisionMamba(nn.Module):
         self.layers = ModuleList()
         for i, num_layer in enumerate(num_layers):
             embed_dims_i = embed_dims * num_heads[i]
-            patch_embed = PatchEmbed(
+            patch_embed = PatchEmbedDeform(
                 in_channels=in_channels,
                 embed_dims=embed_dims_i,
                 kernel_size=patch_sizes[i],

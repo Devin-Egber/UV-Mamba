@@ -258,9 +258,12 @@ class IoU(Metric):
             is the mean IoU.
         """
         conf_matrix = self.conf_metric.value()
-        if self.ignore_index is not None:
-            conf_matrix[:, self.ignore_index] = 0
-            conf_matrix[self.ignore_index, :] = 0
+        if torch.is_tensor(conf_matrix):
+            conf_matrix = conf_matrix.cpu().numpy()
+        # if self.ignore_index is not None:
+        #     conf_matrix[:, self.ignore_index] = 0
+        #     conf_matrix[self.ignore_index, :] = 0
+
         true_positive = np.diag(conf_matrix)
         false_positive = np.sum(conf_matrix, 0) - true_positive
         false_negative = np.sum(conf_matrix, 1) - true_positive
@@ -268,8 +271,11 @@ class IoU(Metric):
         # Just in case we get a division by 0, ignore/hide the error
         with np.errstate(divide='ignore', invalid='ignore'):
             iou = true_positive / (true_positive + false_positive + false_negative)
+            acc = true_positive / np.sum(conf_matrix, 1)
 
-        return iou, np.nanmean(iou)
+        all_acc = true_positive.sum() / conf_matrix.sum()
+        metrics = {'IoU': iou, 'mIoU': np.nanmean(iou) * 100, 'Acc': acc, 'OA': all_acc * 100}
+        return metrics
 
     def get_miou_acc(self):
         conf_matrix = self.conf_metric.value()

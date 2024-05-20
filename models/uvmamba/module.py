@@ -1,9 +1,6 @@
 import torch
 import torch.nn as nn
-import math
-import torch.nn.functional as F
 from torchvision.ops import deform_conv2d
-from .utils import to_2tuple
 
 
 class PatchEmbed(nn.Module):
@@ -69,7 +66,7 @@ class PatchEmbed(nn.Module):
 
 
 class DeformableConv2d(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=0, dilation=1):
         super(DeformableConv2d, self).__init__()
         self.stride = stride
         self.padding = padding
@@ -85,7 +82,7 @@ class DeformableConv2d(nn.Module):
 
 
 class ModulatedDeformConv2d(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=0, dilation=1):
         super(ModulatedDeformConv2d, self).__init__()
         self.stride = stride
         self.padding = padding
