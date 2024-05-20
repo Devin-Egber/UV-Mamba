@@ -3,7 +3,6 @@ import torch.nn as nn
 from torch.nn import ModuleList
 
 import math
-import torch.utils.checkpoint as cp
 from transformers.models.mamba.modeling_mamba import MambaMixer
 import argparse
 
@@ -110,6 +109,7 @@ class MambaEncoderLayer(nn.Module):
                  drop_rate=0.,
                  drop_path_rate=0.,
                  proj_drop=0.,
+                 cur_index=None,
                  dropout_layer=dict(type='Dropout', drop_prob=0.),
                  depth=2):
         super().__init__()
@@ -118,21 +118,20 @@ class MambaEncoderLayer(nn.Module):
 
         self.mamba_layer = nn.ModuleList()
 
-        for i in range(depth):
-            _layer_cfg = dict(
-                hidden_size=embed_dims,
-                state_size=16,
-                # intermediate_size=self.arch_settings.get('feedforward_channels', self.embed_dims * 2),
-                intermediate_size=384,
-                conv_kernel=4,
-                # time_step_rank=math.ceil(embed_dims / 16),
-                time_step_rank=math.ceil(embed_dims / 4),
-                use_conv_bias=True,
-                hidden_act="silu",
-                use_bias=False,
-            )
-            config = argparse.Namespace(**_layer_cfg)
-            self.mamba_layer.append(MambaMixer(config, i))
+        mamba_layer_cfg = dict(
+            hidden_size=embed_dims,
+            state_size=16,
+            # intermediate_size=self.arch_settings.get('feedforward_channels', self.embed_dims * 2),
+            intermediate_size=384,
+            conv_kernel=4,
+            # time_step_rank=math.ceil(embed_dims / 16),
+            time_step_rank=math.ceil(embed_dims / 4),
+            use_conv_bias=True,
+            hidden_act="silu",
+            use_bias=False,
+        )
+        config = argparse.Namespace(**mamba_layer_cfg)
+        self.mamba_layer.append(MambaMixer(config, cur_index))
 
         self.norm2 = nn.LayerNorm(embed_dims)
 
@@ -146,15 +145,14 @@ class MambaEncoderLayer(nn.Module):
         self.dropout_layer = DropPath(
             dropout_layer['drop_prob']) if dropout_layer else torch.nn.Identity()
 
-        self.fc = nn.Conv2d(
-            in_channels=embed_dims * 3,
-            out_channels=embed_dims,
-            kernel_size=1,
-            stride=1,
-            bias=True)
-
+        gate_out_dim = 3
+        self.gate_layers = nn.Sequential(
+                nn.Linear(gate_out_dim * embed_dims, gate_out_dim, bias=False),
+                nn.Softmax(dim=-1))
 
     def forward(self, x, hw_shape, identity=None):
+        if identity is None:
+            identity = x
 
         B = x.shape[0]
         x_inputs = [x, torch.flip(x, [1])]
@@ -165,28 +163,29 @@ class MambaEncoderLayer(nn.Module):
 
         for layer in self.mamba_layer:
             x = layer(x)
-        # forward_x, reverse_x, shuffle_x = torch.split(x_inputs, B, dim=0)
-        # reverse_x = torch.flip(reverse_x, [1])
-        # # reverse the random index
-        # rand_index = torch.argsort(rand_index)
-        # shuffle_x = shuffle_x[:, rand_index]
 
+        forward_x, reverse_x, shuffle_x = torch.split(x, B, dim=0)
+        reverse_x = torch.flip(reverse_x, [1])
+        # reverse the random index
+        rand_index = torch.argsort(rand_index)
+        shuffle_x = shuffle_x[:, rand_index]
+        mean_forward_x = torch.mean(forward_x, dim=1)
+        mean_reverse_x = torch.mean(reverse_x, dim=1)
+        mean_shuffle_x = torch.mean(shuffle_x, dim=1)
+        gate = torch.cat([mean_forward_x, mean_reverse_x, mean_shuffle_x], dim=-1)
+        gate = self.gate_layers(gate)
+        gate = gate.unsqueeze(-1)
+        x = gate[:, 0:1] * forward_x + gate[:, 1:2] * reverse_x + gate[:, 2:3] * shuffle_x
+
+        x = identity + self.dropout_layer(self.proj_drop(x))
         # x = (forward_x + reverse_x + shuffle_x) / 3
-        x = self.fc(x)
-        if identity is None:
-            identity = x
+
         x = self.ffn(self.norm2(x), hw_shape, identity=x)
-        
-
-        return identity + self.dropout_layer(x)
+        return x
 
 
-class MixVisionTransformer(nn.Module):
-    """The backbone of Segformer.
-
-    This backbone is the implementation of `SegFormer: Simple and
-    Efficient Design for Semantic Segmentation with
-    Transformers <https://arxiv.org/abs/2105.15203>`_.
+class MixVisionMamba(nn.Module):
+    """The backbone of uvmamba.
     Args:
         in_channels (int): Number of input channels. Default: 3.
         embed_dims (int): Embedding dimension. Default: 768.
@@ -226,13 +225,11 @@ class MixVisionTransformer(nn.Module):
                  sr_ratios=[8, 4, 2, 1],
                  out_indices=(0, 1, 2, 3),
                  mlp_ratio=4,
-                 qkv_bias=True,
                  drop_rate=0.,
-                 attn_drop_rate=0.,
                  drop_path_rate=0.,
                  with_cp=False):
-        super().__init__()
 
+        super().__init__()
 
         self.embed_dims = embed_dims
         self.num_stages = num_stages
@@ -266,20 +263,15 @@ class MixVisionTransformer(nn.Module):
                 padding=patch_sizes[i] // 2)
 
             layer = ModuleList([
-                TransformerEncoderLayer(
+                MambaEncoderLayer(
                     embed_dims=embed_dims_i,
-                    num_heads=num_heads[i],
                     feedforward_channels=mlp_ratio * embed_dims_i,
                     drop_rate=drop_rate,
-                    attn_drop_rate=attn_drop_rate,
-                    drop_path_rate=dpr[cur + idx],
-                    qkv_bias=qkv_bias,
-                    with_cp=with_cp,
-                    sr_ratio=sr_ratios[i]) for idx in range(num_layer)
+                    cur_index=cur+idx,
+                    drop_path_rate=dpr[cur + idx]) for idx in range(num_layer)
             ])
 
             in_channels = embed_dims_i
-            # The ret[0] of build_norm_layer is norm name.
             norm = nn.LayerNorm(embed_dims_i)
             self.layers.append(ModuleList([patch_embed, layer, norm]))
             cur += num_layer

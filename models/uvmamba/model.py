@@ -1,13 +1,13 @@
 import torch.nn as nn
 from .head import SegformerHead
-from .backbone import MixVisionTransformer
+from .backbone import MixVisionMamba
 
 
 class UVMamba(nn.Module):
     def __init__(self, config):
         super(UVMamba, self).__init__()
 
-        self.backbone = MixVisionTransformer(**config.MODEL.backbone)
+        self.backbone = MixVisionMamba(**config.MODEL.backbone)
         self.decode_head = SegformerHead(**config.MODEL.head)
 
     def forward(self, inputs):
