@@ -1,0 +1,50 @@
+MODE: "semantic"
+BACKBONE: "uvmamba"
+
+
+DATASET:
+  dataset: uvseg
+  dataset_folder: "/data/dataset/uv_data/beijing"
+  num_workers: 8
+  target: "semantic"
+  norm: True
+  crop_size: [1024, 1024]
+  num_classes: 2
+  ignore_index: -1
+  avoid_index: -1
+
+
+MODEL:
+  backbone:
+    in_channels: 3
+    embed_dims: 32
+    num_stages: 4
+    num_layers: [2, 2, 2, 2]
+    num_heads: [1, 2, 5, 8]
+    patch_sizes: [7, 3, 3, 3]
+    strides: [4, 2, 2, 2]
+    sr_ratios: [8, 4, 2, 1]
+    out_indices: [0, 1, 2, 3]
+    mlp_ratio: 4
+    drop_rate: 0.
+    attn_drop_rate: 0.
+    drop_path_rate: 0.1
+
+
+  head:
+    inchannels: [32, 64, 128, 256]
+    num_classes: 2
+    channels: 256
+
+PIPELINE:
+  train:
+    epochs: 100
+    rdm_seed: null
+    display_step: 20
+    val_every: 1
+    val_after: 0
+    save_total_limit: 5
+
+PATH:
+  ds_config: "config/ds_config/uvmamba/uvmamba_ds_config_beijing.json"
+  res_dir: "result/uvmamba_beijing"

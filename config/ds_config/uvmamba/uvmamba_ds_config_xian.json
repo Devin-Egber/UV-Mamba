@@ -7,13 +7,13 @@
   "optimizer": {
     "type": "AdamW",
     "params": {
-      "lr": 0.002,
+      "lr": 0.0002,
       "betas": [
         0.9,
         0.999
       ],
       "eps": 1.0e-8,
-      "weight_decay": 0.01
+      "weight_decay": 0.0
     }
   },
 
@@ -21,10 +21,10 @@
   "scheduler": {
     "type": "WarmupDecayLR",
     "params": {
-      "total_num_steps": 74400,
+      "total_num_steps": 3300,
       "warmup_min_lr": 1.0e-6,
-      "warmup_max_lr": 0.002,
-      "warmup_num_steps": 22320
+      "warmup_max_lr": 0.0002,
+      "warmup_num_steps": 990
     }
   },
 
@@ -45,7 +45,7 @@
   "tensorboard": {
     "enabled": true,
     "output_path": "log/",
-    "job_name": "segformer_cityscapes"
+    "job_name": "segformer_xian"
   },
   "wall_clock_breakdown": false
 }

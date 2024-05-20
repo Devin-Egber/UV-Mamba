@@ -2,6 +2,7 @@ import argparse
 import deepspeed
 import warnings
 import yaml
+import pickle
 from addict import Dict
 from utils.file_utils import *
 from utils.dataset_utils import *
@@ -12,6 +13,7 @@ from utils.distributed_utils import get_dist_info, all_metrics_reduce, dist_barr
 
 from utils.dataset_utils import get_dataset, build_uv_dataloader
 from losses import get_loss
+
 
 # from src.utils.lr_scheduler import build_schduler
 
@@ -62,22 +64,20 @@ def main(config):
 
 
     # Load weights from pre-trained models
-    # if config.fine_tune:
-    #     assert os.path.isfile(config.PRETRAINED), f'the path of pretrained model {config.PRETRAINED}" is not valid!!'
-    #     model_state_file = config.PRETRAINED
-    #     logger.info(f'=> Loading model from {model_state_file}')
-    #     pretrain_dict = torch.load(model_state_file)['state_dict']
-    #     with open('exchanger_weight/exchanger_dict.pkl', 'rb') as file:
-    #         loaded_exchanger_dict = pickle.load(file)
-    #
-    #     pretrained_dict = {'base_model.' + k: v for k, v in pretrain_dict.items()
-    #                        if k in loaded_exchanger_dict.keys()}
-    #     model_dict = model.state_dict()
-    #     pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict.keys()}
-    #     for k in pretrained_dict.keys():
-    #         logger.info(f'=> Loading {k} from pretrained model')
-    #     model_dict.update(pretrained_dict)
-    #     model.load_state_dict(model_dict)
+    if config.fine_tune:
+        # assert os.path.isfile(config.PRETRAINED), f'the path of pretrained model {config.PRETRAINED}" is not valid!!'
+        # model_state_file = config.PRETRAINED
+        # logger.info(f'=> Loading model from {model_state_file}')
+        # pretrain_dict = torch.load(model_state_file)['state_dict']
+        with open('test_code/backbone.pkl', 'rb') as file:
+            loaded_backbone_dict = pickle.load(file)
+
+        model_dict = model.state_dict()
+        pretrained_dict = {k: v for k, v in loaded_backbone_dict.items() if k in model_dict.keys()}
+        for k in pretrained_dict.keys():
+            logger.info(f'=> Loading {k} from pretrained model')
+        model_dict.update(pretrained_dict)
+        model.load_state_dict(model_dict)
 
     model = model.to(device)
 

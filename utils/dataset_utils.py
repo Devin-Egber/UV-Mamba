@@ -80,7 +80,8 @@ def get_dataset(config):
         normvals = json.loads(file.read())
 
     train_transform = A.Compose([
-        A.Resize(IMAGE_HEIGHT, IMAGE_WIDTH),
+        # A.Resize(IMAGE_HEIGHT, IMAGE_WIDTH),
+        A.RandomCrop(IMAGE_HEIGHT, IMAGE_WIDTH),
         # A.Rotate(limit=35, p=1.0),
         A.HorizontalFlip(p=0.5),
         A.VerticalFlip(p=0.5),
@@ -95,7 +96,8 @@ def get_dataset(config):
     ])
 
     val_transform = A.Compose([
-        A.Resize(IMAGE_HEIGHT, IMAGE_WIDTH),
+        # A.Resize(IMAGE_HEIGHT, IMAGE_WIDTH),
+        A.RandomCrop(IMAGE_HEIGHT, IMAGE_WIDTH),
         A.Normalize(
             mean=normvals["mean"],
             std=normvals['std'],
@@ -107,7 +109,8 @@ def get_dataset(config):
     ])
 
     test_transform = A.Compose([
-        A.Resize(IMAGE_HEIGHT, IMAGE_WIDTH),
+        # A.Resize(IMAGE_HEIGHT, IMAGE_WIDTH),
+        A.RandomCrop(IMAGE_HEIGHT, IMAGE_WIDTH),
         A.Normalize(
             mean=normvals["mean"],
             std=normvals['std'],

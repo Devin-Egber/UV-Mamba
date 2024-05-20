@@ -8,26 +8,21 @@ from torch.nn import init
 
 from utils.distributed_utils import logger
 
+
 def get_model(config):
 
     if config.BACKBONE == "segformer":
         from models.Segformer.segformer import SegFormer
         base_model = SegFormer(num_classes=2, phi='b0', pretrained=False)
 
-    if config.BACKBONE == "segmamba":
+    elif config.BACKBONE == "segmamba":
         from models.Segmamba.segmamba import SegMamba
         base_model = SegMamba(num_classes=2, phi='b0', pretrained=False)
 
-    elif config.BACKBONE == "exchanger_unet":
-        from src.backbones.exchanger.models import ExchangerUnet
-        base_model = ExchangerUnet(config, mode='train_val')
-    elif config.BACKBONE == "exchanger_maskformer":
-        from src.backbones.exchanger.models import ExchangerMaskformer
-        base_model = ExchangerMaskformer(config, mode='train_val')
-    elif config.BACKBONE == "TSViT":
-        from src.backbones.TSViT.TSViT import TSViTDiffusion
-        model_config = config.MODEL
-        base_model = TSViTDiffusion(model_config)
+    elif config.BACKBONE == "uvmamba":
+        from models.uvmamba.model import UVMamba
+        base_model = UVMamba(config)
+
     else:
         raise NotImplementedError
 
@@ -106,6 +101,7 @@ def init_weights(module):
                 init.orthogonal_(param.data)
             else:
                 init.normal_(param.data)
+
 
 def load_weights(model, checkpoint_path):
     model.load_state_dict(torch.load(checkpoint_path)["module"], strict=False)

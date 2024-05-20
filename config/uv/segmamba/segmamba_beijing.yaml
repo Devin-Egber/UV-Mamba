@@ -44,4 +44,4 @@ PIPELINE:
 
 PATH:
   ds_config: "config/ds_config/segmamba/segmamba_ds_config_beijing.json"
-  res_dir: "result/segmamba_beijing_epoch200_lr_0.001"
+  res_dir: "result/segmamba_beijing_deform2"

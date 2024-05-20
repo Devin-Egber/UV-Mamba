@@ -43,5 +43,5 @@ PIPELINE:
     save_total_limit: 5
 
 PATH:
-  ds_config: "config/ds_config/segmamba_ds_config_beijing.json"
+  ds_config: "config/ds_config/uvmamba_ds_config_beijing.json"
   res_dir: "result/segformer_beijing"

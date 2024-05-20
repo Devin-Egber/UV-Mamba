@@ -12,6 +12,7 @@ from utils.model_runner import run_iterate
 from utils.distributed_utils import logger
 from utils.dataset_utils import get_dataset, build_uv_dataloader
 
+from losses import get_loss
 # from src.losses import get_loss
 
 
@@ -32,9 +33,16 @@ def main(config):
     else:
         device = torch.device("cuda", config.local_rank)
 
+    # _, _, dt_test = get_dataset(config)
+    #
+    # test_loader = build_uv_dataloader(dt_test, 1, dataset_config, False, False, sampler=None)
+
     _, _, dt_test = get_dataset(config)
 
     test_loader = build_uv_dataloader(dt_test, 1, dataset_config, False, False, sampler=None)
+
+
+
 
     model = get_model(config)
     model = model.to(device)
@@ -50,7 +58,8 @@ def main(config):
     model = deepspeed.init_inference(model, mp_size=1, dtype=dtype, replace_with_kernel_inject=False)
 
     # Loss
-    criterion = nn.CrossEntropyLoss()
+    # criterion = nn.CrossEntropyLoss()
+    criterion = get_loss(dataset_config)
 
     # Inference
     logger.info(f"***** Running testing *****")
@@ -76,11 +85,11 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_file',
-                        default="config/uv/segformer/segformer.yaml",
+                        default="config/uv/segmamba/segmamba_cityspace.yaml",
                         type=str,
                         help='Configuration (.json) file to use')
     parser.add_argument('--weight_folder',
-                        default="weights/global_step7568",
+                        default="weights/global_step74400",
                         type=str,
                         help='Path to the main folder containing the pre-trained weights')
     parser.add_argument('--local_rank', type=int, default=-1, help='Specifying the default GPU')
