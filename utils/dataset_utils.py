@@ -109,8 +109,8 @@ def get_dataset(config):
     ])
 
     test_transform = A.Compose([
-        # A.Resize(IMAGE_HEIGHT, IMAGE_WIDTH),
-        A.RandomCrop(IMAGE_HEIGHT, IMAGE_WIDTH),
+        A.Resize(IMAGE_HEIGHT, IMAGE_WIDTH),
+        # A.RandomCrop(IMAGE_HEIGHT, IMAGE_WIDTH),
         A.Normalize(
             mean=normvals["mean"],
             std=normvals['std'],
@@ -135,7 +135,6 @@ def get_dataset(config):
 
     else:
         raise NotImplementedError
-
 
 
 def build_uv_dataloader(

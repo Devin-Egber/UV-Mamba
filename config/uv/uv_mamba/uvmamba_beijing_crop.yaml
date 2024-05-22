@@ -4,11 +4,11 @@ BACKBONE: "uvmamba"
 
 DATASET:
   dataset: uvseg
-  dataset_folder: "/data/dataset/uv_data/beijing"
+  dataset_folder: "/data/dataset/uv_beijing_crop/beijing-512"
   num_workers: 8
   target: "semantic"
   norm: True
-  crop_size: [1024, 1024]
+  crop_size: [512, 512]
   num_classes: 2
   ignore_index: -1
   avoid_index: -1
@@ -20,6 +20,7 @@ MODEL:
     embed_dims: 32
     num_stages: 4
     num_layers: [2, 2, 2, 2]
+    num_heads: [1, 2, 5, 8]
     patch_sizes: [7, 3, 3, 3]
     strides: [4, 2, 2, 2]
     sr_ratios: [8, 4, 2, 1]
@@ -30,7 +31,7 @@ MODEL:
 
 
   head:
-    inchannels: [32, 64, 128, 256]
+    inchannels: [32, 64, 160, 256]
     num_classes: 2
     channels: 256
 

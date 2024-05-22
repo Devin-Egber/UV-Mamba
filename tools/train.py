@@ -51,17 +51,16 @@ def main(config):
         test_sampler = data.distributed.DistributedSampler(dt_test, shuffle=False, drop_last=False)
 
     train_loader = build_uv_dataloader(dt_train, world_size, dataset_config, (train_sampler is None), False,
-                                         sampler=train_sampler)
+                                            sampler=train_sampler)
     val_loader = build_uv_dataloader(dt_val, world_size, dataset_config, False, False,
-                                         sampler=val_sampler)
+                                            sampler=val_sampler)
     test_loader = build_uv_dataloader(dt_test, world_size, dataset_config, False, False,
-                                          sampler=test_sampler)
+                                            sampler=test_sampler)
     # Model definition
     model = get_model(config)
     # model.apply(init_weights)
 
     logger.info(model)
-
 
     # Load weights from pre-trained models
     if config.fine_tune:

@@ -131,6 +131,7 @@ class ConfusionMatrix(Metric):
         else:
             return self.conf
 
+
 def confusion_matrix_analysis(mat):
     """
     This method computes all the performance metrics from the confusion matrix. In addition to overall accuracy, the
@@ -260,9 +261,6 @@ class IoU(Metric):
         conf_matrix = self.conf_metric.value()
         if torch.is_tensor(conf_matrix):
             conf_matrix = conf_matrix.cpu().numpy()
-        # if self.ignore_index is not None:
-        #     conf_matrix[:, self.ignore_index] = 0
-        #     conf_matrix[self.ignore_index, :] = 0
 
         true_positive = np.diag(conf_matrix)
         false_positive = np.sum(conf_matrix, 0) - true_positive

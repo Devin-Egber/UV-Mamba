@@ -1,8 +1,9 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .head import SegformerHead
-from .backbone import MixVisionMamba
-# from .segformer_backbone import MixVisionTransformer
+
+from models.uvmamba.head import SegformerHead
+from models.uvmamba.backbone import MixVisionMamba, DeformMixVisionMamba
 
 
 class UVMamba(nn.Module):

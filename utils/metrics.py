@@ -30,6 +30,7 @@ class ConfusionMatrix(Metric):
 
     def __init__(self, num_classes, normalized=False, device='cpu', lazy=True):
         super().__init__()
+
         if device == 'cpu':
             self.conf = np.ndarray((num_classes, num_classes), dtype=np.int64)
         else:
@@ -238,7 +239,6 @@ class IoU(Metric):
             keep = target != self.ignore_index
             predicted = predicted[keep]
             target = target[keep]
-
 
         self.conf_metric.add(predicted.view(-1), target.view(-1))
 

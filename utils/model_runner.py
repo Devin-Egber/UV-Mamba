@@ -3,8 +3,8 @@ import time
 import torch
 import torch.distributed as dist
 from tqdm import tqdm
-# from utils.metrics import IoU
-from utils.sem_metrics import IoU
+from utils.metrics import IoU
+# from utils.sem_metrics import IoU
 from utils.visualisation_utils import save_images
 from utils.distributed_utils import get_dist_info, logger
 
@@ -49,7 +49,6 @@ def run_iterate(model, data_loader, criterion, config, mode="train", device=None
             scores = iou_meter.value()
             scores_values_str = ','.join([f"{key} : {value}" for key, value in scores.items()])
             logger.tqdm_write(scores_values_str)
-
 
     t_end = time.time()
     total_time = t_end - t_start

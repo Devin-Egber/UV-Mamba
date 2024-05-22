@@ -4,8 +4,9 @@ from torchvision.ops import deform_conv2d
 
 
 class PatchEmbed(nn.Module):
-    """Image to Patch Embedding.
+    """
 
+    Image to Patch Embedding.
     We use a conv layer to implement PatchEmbed.
 
     Args:

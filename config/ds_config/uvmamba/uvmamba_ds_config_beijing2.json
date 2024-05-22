@@ -7,7 +7,7 @@
   "optimizer": {
     "type": "AdamW",
     "params": {
-      "lr": 0.0002,
+      "lr": 0.00002,
       "betas": [
         0.9,
         0.999
@@ -22,8 +22,8 @@
     "type": "WarmupDecayLR",
     "params": {
       "total_num_steps": 8600,
-      "warmup_min_lr": 1.0e-6,
-      "warmup_max_lr": 0.0002,
+      "warmup_min_lr": 1.0e-7,
+      "warmup_max_lr": 0.00002,
       "warmup_num_steps": 2580
     }
   },
@@ -45,7 +45,7 @@
   "tensorboard": {
     "enabled": true,
     "output_path": "log/",
-    "job_name": "uvmamba_beijing_crop"
+    "job_name": "uvmamba_beijing2"
   },
   "wall_clock_breakdown": false
 }
