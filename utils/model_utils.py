@@ -1,7 +1,6 @@
 import os
 import shutil
 import torch
-
 from pathlib import Path
 from torch import nn
 from torch.nn import init
@@ -22,6 +21,10 @@ def get_model(config):
     elif config.BACKBONE == "uvmamba":
         from models.uvmamba.model import UVMamba
         base_model = UVMamba(config)
+
+    elif config.BACKBONE == "deform_uvmamba":
+        from models.uvmamba.model import DefromUVMamba
+        base_model = DefromUVMamba(config)
 
     else:
         raise NotImplementedError

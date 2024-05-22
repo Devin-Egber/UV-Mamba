@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_file',
-                        default="config/uv/uv_mamba/uvmamba_beijing.yaml",
+                        default="config/uv/uv_mamba/deform_uvmamba_beijing.yaml",
                         type=str,
                         help='Configuration (.json) file to use')
     parser.add_argument('--weight_folder',

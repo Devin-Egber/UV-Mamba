@@ -45,7 +45,7 @@
   "tensorboard": {
     "enabled": true,
     "output_path": "log/",
-    "job_name": "uvmamba_beijing_crop"
+    "job_name": "deform_uvmamba_beijing"
   },
   "wall_clock_breakdown": false
 }

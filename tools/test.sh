@@ -4,7 +4,7 @@ export PYTHONPATH=$work_dir
 MASTER_PORT=32990
 
 
-#CONFIG_FILE="config/uv/segformer/uvmamba_beijing.yaml"
+#CONFIG_FILE="config/uv/segformer/deform_uvmamba_beijing.yaml"
 
 # CONFIG_FILE="config/uv/segformer/segformer_shenzhen.yaml"
 

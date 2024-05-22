@@ -1,5 +1,5 @@
 MODE: "semantic"
-BACKBONE: "uvmamba"
+BACKBONE: "deform_uvmamba"
 
 
 DATASET:
@@ -45,5 +45,5 @@ PIPELINE:
     save_total_limit: 5
 
 PATH:
-  ds_config: "config/ds_config/uvmamba/uvmamba_ds_config_beijing_crop.json"
-  res_dir: "result/uvmamba_beijing_crop"
+  ds_config: "config/ds_config/uvmamba/deform_uvmamba_ds_config_beijing_crop.json"
+  res_dir: "result/deform_uvmamba_beijing_crop"
