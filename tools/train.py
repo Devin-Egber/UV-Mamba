@@ -205,7 +205,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_file',
                         type=str,
-                        default="config/uv/uv_mamba/deform_uvmamba_beijing_crop.yaml",
+                        default="config/uv/uv_mamba/deform_uvmamba_cityscapes.yaml",
                         help='Configuration (.json) file to use')
     parser.add_argument('--rdm_seed', type=int, default=None, help='Random seed')
     parser.add_argument('--local_rank', type=int, default=-1,

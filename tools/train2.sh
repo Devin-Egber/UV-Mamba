@@ -2,7 +2,8 @@ work_dir="/data/project/UV-Mamba"
 export PYTHONPATH=$work_dir
 MASTER_PORT=32991
 
-CONFIG_FILE="config/uv/uv_mamba/uvmamba_beijing.yaml"
+# CONFIG_FILE="config/uv/uv_mamba/uvmamba_beijing.yaml"
+CONFIG_FILE="config/uv/uv_mamba/deform_uvmamba_cityscapes.yaml"
 
 
 CUDA_VISIBLE_DEVICES=1 deepspeed --master_port $MASTER_PORT tools/train.py --config_file $CONFIG_FILE
