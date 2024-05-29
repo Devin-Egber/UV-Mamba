@@ -11,6 +11,7 @@ from models.uvmamba.utils import trunc_normal_init, constant_init, normal_init
 from models.uvmamba.module import DropPath
 from models.uvmamba.module import PatchEmbed, PatchEmbedDeform, PatchEmbedModulatedDeform
 from models.uvmamba.module import DeformableConv2d, ModulatedDeformConv2d
+from DCNv4.modules import DCNv4
 
 
 class MixFFN(nn.Module):
@@ -109,6 +110,9 @@ class MixFFNDeform(nn.Module):
         self.feedforward_channels = feedforward_channels
         self.activate = nn.GELU()
 
+        self.norm1 = nn.LayerNorm(embed_dims)
+        self.norm2 = nn.LayerNorm(embed_dims)
+
         in_channels = embed_dims
 
         fc1 = nn.Conv2d(
@@ -118,12 +122,14 @@ class MixFFNDeform(nn.Module):
             stride=1)
 
         # 3x3 depth wise conv to provide positional encode information
-        pe_conv = DeformableConv2d(
+        pe_conv = nn.Conv2d(
             in_channels=feedforward_channels,
             out_channels=feedforward_channels,
             kernel_size=3,
             stride=1,
-            padding=(3 - 1) // 2)
+            padding=(3 - 1) // 2,
+            bias=True,
+            groups=feedforward_channels)
 
         fc2 = nn.Conv2d(
             in_channels=feedforward_channels,
@@ -131,19 +137,39 @@ class MixFFNDeform(nn.Module):
             kernel_size=1,
             stride=1)
 
+        self.conv = DCNv4(
+                    channels=embed_dims,
+                    kernel_size=3,
+                    stride=1,
+                    padding=(3 - 1) // 2,
+                    group=2)
+
         drop = nn.Dropout(ffn_drop)
         layers = [fc1, pe_conv, self.activate, drop, fc2, drop]
         self.layers = nn.Sequential(*layers)
+        # self.layers = nn.ModuleList(layers)
         self.dropout_layer = DropPath(
             dropout_layer['drop_prob']) if dropout_layer else torch.nn.Identity()
 
     def forward(self, x, hw_shape, identity=None):
+        # out = self.norm(self.conv(x))
+
         out = nlc_to_nchw(x, hw_shape)
+
         out = self.layers(out)
+        # for layer in self.layers:
+        #     if isinstance(layer, DCNv4):
+        #         out = nchw_to_nlc(out)
+        #         out = layer(out)
+        #         out = nlc_to_nchw(out, hw_shape)
+        #     out = layer(out)
+
         out = nchw_to_nlc(out)
+        out = self.norm1(self.conv(out))
         if identity is None:
             identity = x
-        return identity + self.dropout_layer(out)
+        out = identity + self.dropout_layer(out)
+        return self.norm2(out)
 
 
 class MambaEncoderLayer(nn.Module):
@@ -187,12 +213,11 @@ class MambaEncoderLayer(nn.Module):
 
         mamba_layer_cfg = dict(
             hidden_size=embed_dims,
-            state_size=16,
-            # intermediate_size=self.arch_settings.get('feedforward_channels', self.embed_dims * 2),
+            state_size=4,
             intermediate_size=384,
             conv_kernel=4,
-            # time_step_rank=math.ceil(embed_dims / 16),
-            time_step_rank=math.ceil(embed_dims / 4),
+            # time_step_rank=math.ceil(embed_dims / 4),
+            time_step_rank=embed_dims,
             use_conv_bias=True,
             hidden_act="silu",
             use_bias=False,
@@ -288,14 +313,23 @@ class DeformMambaEncoderLayer(nn.Module):
         self.norm1 = nn.LayerNorm(embed_dims)
 
         self.mamba_layer = nn.ModuleList()
-
+       
+        # mamba_layer_cfg = dict(
+        #     hidden_size=embed_dims,
+        #     state_size=4,
+        #     intermediate_size=384,
+        #     conv_kernel=4,
+        #     # time_step_rank=math.ceil(embed_dims / 4),
+        #     time_step_rank=embed_dims,
+        #     use_conv_bias=True,
+        #     hidden_act="silu",
+        #     use_bias=False,
+        # )
         mamba_layer_cfg = dict(
             hidden_size=embed_dims,
             state_size=16,
-            # intermediate_size=self.arch_settings.get('feedforward_channels', self.embed_dims * 2),
             intermediate_size=384,
             conv_kernel=4,
-            # time_step_rank=math.ceil(embed_dims / 16),
             time_step_rank=math.ceil(embed_dims / 4),
             use_conv_bias=True,
             hidden_act="silu",

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torchvision.ops import deform_conv2d
+from DCNv4.modules import DCNv4
 
 
 class PatchEmbed(nn.Module):
@@ -137,15 +138,19 @@ class PatchEmbedDeform(nn.Module):
         if stride is None:
             stride = kernel_size
 
-        self.projection = DeformableConv2d(
-                                in_channels=in_channels,
-                                out_channels=embed_dims,
-                                kernel_size=kernel_size,
-                                stride=stride,
-                                padding=padding,
-                                dilation=dilation)
+        self.projection = nn.Conv2d(
+                            in_channels=in_channels,
+                            out_channels=embed_dims,
+                            kernel_size=kernel_size,
+                            stride=stride,
+                            padding=padding,
+                            dilation=dilation,
+                            bias=bias)
 
-        self.norm = nn.LayerNorm(embed_dims)
+        self.conv = DCNv4(channels=embed_dims, group=2)
+
+        self.norm1 = nn.LayerNorm(embed_dims)
+        self.norm2 = nn.LayerNorm(embed_dims)
 
     def forward(self, x):
         """
@@ -163,8 +168,11 @@ class PatchEmbedDeform(nn.Module):
         x = self.projection(x)
         out_size = (x.shape[2], x.shape[3])
         x = x.flatten(2).transpose(1, 2)
-        if self.norm is not None:
-            x = self.norm(x)
+        # x = self.norm1(x)
+
+        # x = self.conv(x)
+        x = self.norm2(x)
+
         return x, out_size
 
 

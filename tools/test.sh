@@ -12,9 +12,9 @@ MASTER_PORT=32990
 # CONFIG_FILE="config/uv/segmamba/segmamba_beijing.yaml"
 # CONFIG_FILE="config/uv/segmamba/segmamba_cityspace.yaml"
 
-CONFIG_FILE="config/uv/uv_mamba/uvmamba_beijing.yaml"
+CONFIG_FILE="config/uv/uv_mamba/deform_uvmamba_beijing.yaml"
 
 
 # test one of five fold script
-weight_folder="weights/global_step1376"
+weight_folder="weights/global_step2838"
 CUDA_VISIBLE_DEVICES=0 deepspeed --master_port $MASTER_PORT tools/test.py --config_file $CONFIG_FILE --weight_folder $weight_folder

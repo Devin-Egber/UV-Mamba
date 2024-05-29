@@ -1,6 +1,6 @@
 import torch
 import pickle
-checkpoint_path = "/data/project/UV-Mamba/result/segmamba_cityscapes/weights/global_step74400/mp_rank_00_model_states.pt"
+checkpoint_path = "/data/project/UV-Mamba/result/deform_uvmamba_cityscapes/weights/global_step147312/mp_rank_00_model_states.pt"
 pretrained_dict = torch.load(checkpoint_path)["module"]
 
 
