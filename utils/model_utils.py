@@ -26,6 +26,10 @@ def get_model(config):
         from models.uvmamba.model import DefromUVMamba
         base_model = DefromUVMamba(config)
 
+    elif config.BACKBONE == "samba":
+        from models.uvmamba.model import Samba
+        base_model = Samba(config)
+
     else:
         raise NotImplementedError
 

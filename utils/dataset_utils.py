@@ -96,8 +96,8 @@ def get_dataset(config):
     ])
 
     val_transform = A.Compose([
-        # A.Resize(IMAGE_HEIGHT, IMAGE_WIDTH),
-        A.RandomCrop(IMAGE_HEIGHT, IMAGE_WIDTH),
+        A.Resize(IMAGE_HEIGHT, IMAGE_WIDTH),
+        # A.RandomCrop(IMAGE_HEIGHT, IMAGE_WIDTH),
         A.Normalize(
             mean=normvals["mean"],
             std=normvals['std'],

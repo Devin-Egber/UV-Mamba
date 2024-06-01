@@ -4,11 +4,11 @@ BACKBONE: "samba"
 
 DATASET:
   dataset: uvseg
-  dataset_folder: "/data/dataset/uv_beijing_crop/beijing-512"
+  dataset_folder: "/data/dataset/uv_data/beijing"
   num_workers: 8
   target: "semantic"
   norm: True
-  crop_size: [512, 512]
+  crop_size: [1024, 1024]
   num_classes: 2
   ignore_index: -1
   avoid_index: -1
@@ -45,5 +45,5 @@ PIPELINE:
     save_total_limit: 5
 
 PATH:
-  ds_config: "config/ds_config/uvmamba/deform_uvmamba_ds_config_beijing_crop.json"
-  res_dir: "result/deform_uvmamba_beijing_crop"
+  ds_config: "config/ds_config/uvmamba/samba_ds_config_beijing.json"
+  res_dir: "result/samba_beijing2"

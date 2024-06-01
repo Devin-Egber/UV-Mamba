@@ -29,13 +29,13 @@ def main(config):
     """
     随机种子对测试过程会有影响，固定随机种子使得多次测试结果相同
     """
-    seed = 42
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    random.seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
+    # seed = 42
+    # torch.manual_seed(seed)
+    # np.random.seed(seed)
+    # random.seed(seed)
+    # if torch.cuda.is_available():
+    #     torch.cuda.manual_seed(seed)
+    #     torch.cuda.manual_seed_all(seed)
 
     if config.local_rank == -1:
         device = torch.device("cpu")

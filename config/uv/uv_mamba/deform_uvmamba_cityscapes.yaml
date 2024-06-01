@@ -4,7 +4,7 @@ BACKBONE: "deform_uvmamba"
 
 DATASET:
   dataset: cityscapes
-  dataset_folder: "/data/dataset/cityscapes"
+  dataset_folder: "/data/dataset/city"
   num_workers: 8
   target: "semantic"
   norm: True
@@ -39,8 +39,8 @@ PIPELINE:
   train:
     epochs: 200
     rdm_seed: null
-    display_step: 100
-    val_every: 1
+    display_step: 200
+    val_every: 5
     val_after: 0
     save_total_limit: 5
 

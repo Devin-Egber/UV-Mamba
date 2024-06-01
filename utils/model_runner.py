@@ -3,8 +3,8 @@ import time
 import torch
 import torch.distributed as dist
 from tqdm import tqdm
-# from utils.metrics import IoU
-from utils.sem_metrics import IoU
+from utils.metrics import IoU
+# from utils.sem_metrics import IoU
 from utils.visualisation_utils import save_images
 from utils.distributed_utils import get_dist_info, logger
 
