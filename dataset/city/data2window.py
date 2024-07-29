@@ -65,7 +65,3 @@ def genarate_dataset(data_dir, target_size, save_dir=None, flags=['train', 'val'
                     save_num += 1
 
 
-if __name__ == '__main__':
-    genarate_dataset(data_dir='D:\\迅雷下载\\city\\',
-                    target_size=(1024, 1024),
-                    save_dir='D:\\迅雷下载\\CityScapes\\')

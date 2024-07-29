@@ -12,7 +12,8 @@ from utils.model_runner import run_iterate, init_random_seed
 from utils.distributed_utils import get_dist_info, all_metrics_reduce, dist_barrier, logger
 
 from utils.dataset_utils import get_dataset, build_uv_dataloader
-from losses import get_loss
+# from losses import get_loss
+from utils.loss_function import get_loss
 
 
 # from src.utils.lr_scheduler import build_schduler
@@ -58,7 +59,7 @@ def main(config):
                                             sampler=test_sampler)
     # Model definition
     model = get_model(config)
-    # model.apply(init_weights)
+    model.apply(init_weights)
 
     logger.info(model)
 
@@ -68,7 +69,7 @@ def main(config):
         # model_state_file = config.PRETRAINED
         # logger.info(f'=> Loading model from {model_state_file}')
         # pretrain_dict = torch.load(model_state_file)['state_dict']
-        with open('test_code/backbone.pkl', 'rb') as file:
+        with open('test_code/backbone_full.pkl', 'rb') as file:
             loaded_backbone_dict = pickle.load(file)
 
         model_dict = model.state_dict()
@@ -205,10 +206,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_file',
                         type=str,
-                        default="config/uv/uv_mamba/samba_beijing.yaml",
+                        default="config/uv/uv_mamba/deform_uvmamba_inria.yaml",
                         help='Configuration (.json) file to use')
     parser.add_argument('--rdm_seed', type=int, default=None, help='Random seed')
-    parser.add_argument('--local_rank', type=int, default=-1,
+    parser.add_argument('--local_rank', type=int, default=0,
                         help='Specifying the default GPU')
     parser.add_argument('--auto_resume', action='store_true',
                         help='Resume from the latest checkpoint automatically.')

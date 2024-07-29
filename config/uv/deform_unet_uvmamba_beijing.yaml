@@ -1,11 +1,12 @@
 MODE: "semantic"
-BACKBONE: "deform_uvmamba"
+BACKBONE: "deform_uvmamba_unet"
 
 
 DATASET:
   dataset: uvseg
+  city: beijing
   dataset_folder: "/data/dataset/uv_data/beijing"
-  num_workers: 8
+  num_workers: 4
   target: "semantic"
   norm: True
   crop_size: [1024, 1024]
@@ -21,8 +22,8 @@ MODEL:
     num_stages: 4
     num_layers: [2, 2, 2, 2]
     num_heads: [1, 2, 5, 8]
-    patch_sizes: [7, 3, 3, 3]
-    strides: [4, 2, 2, 2]
+    patch_sizes: [3, 3, 3, 3]
+    strides: [2, 2, 2, 2]
     sr_ratios: [8, 4, 2, 1]
     out_indices: [0, 1, 2, 3]
     mlp_ratio: 4
@@ -38,12 +39,14 @@ MODEL:
 PIPELINE:
   train:
     epochs: 100
-    rdm_seed: null
+    rdm_seed: 929722093
     display_step: 20
     val_every: 1
     val_after: 0
     save_total_limit: 5
 
 PATH:
-  ds_config: "config/ds_config/uvmamba/deform_uvmamba_ds_config_beijing.json"
-  res_dir: "result/deform_uvmamba_beijing"
+  ds_config: "config/ds_config/uvmamba/deform_unet_uvmamba_ds_config_beijing.json"
+  res_dir: "result/deform_unet_uvmamba_beijing"
+
+# show_dir: "visual"

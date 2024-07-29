@@ -1,12 +1,16 @@
 import torch
 import pickle
-checkpoint_path = "/data/project/UV-Mamba/result/deform_uvmamba_cityscapes/weights/global_step147312/mp_rank_00_model_states.pt"
+checkpoint_path = "/data/mamba/Segment/result/deform_uvmamba_inria/weights/global_step103200/mp_rank_00_model_states.pt"
 pretrained_dict = torch.load(checkpoint_path)["module"]
 
+# pretrained_backbone = {k: v for k, v in pretrained_dict.items(), if k.start_with}
+# pretrained_backbone = {k: v for k, v in pretrained_dict.items() if k.split(".")[-2] != "cls_seg"}
 
 pretrained_backbone = {k: v for k, v in pretrained_dict.items() if k.startswith("backbone")}
-with open("backbone.pkl", "wb") as f:
+
+with open("/data/mamba/Segment/test_code/backbone_inria.pkl", "wb") as f:
     pickle.dump(pretrained_backbone, f)
+
 
 #
 # import torch

@@ -15,9 +15,7 @@ def checkpoint(log, config):
             if isinstance(v, np.ndarray):
                 log[key][k] = v.tolist()
 
-    with open(
-            os.path.join(config.res_dir, "trainlog.json"), "w"
-    ) as outfile:
+    with open(os.path.join(config.res_dir, "trainlog.json"), "w") as outfile:
         json.dump(log, outfile, indent=4)
 
 

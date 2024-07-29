@@ -268,19 +268,14 @@ class IoU(Metric):
 
         all_acc = true_positive.sum() / conf_matrix.sum()
 
-        metrics = {'IoU': iou, 'mIoU': np.nanmean(iou) * 100, 'Acc': acc, 'OA': all_acc * 100}
+        metrics = {'IoU': np.nanmean(iou) * 100, 'mIoU': np.nanmean(iou) * 100, 'Acc': all_acc * 100, 'OA': all_acc * 100}
 
         return metrics
 
-    def get_miou_acc(self, backbone):
+    def get_miou_acc(self):
         conf_matrix = self.conf_metric.value()
         if torch.is_tensor(conf_matrix):
             conf_matrix = conf_matrix.cpu().numpy()
-
-        if backbone == 'utae':
-            if self.ignore_index is not None:
-                conf_matrix[:, self.ignore_index] = 0
-                conf_matrix[self.ignore_index, :] = 0
 
         true_positive = np.diag(conf_matrix)
         false_positive = np.sum(conf_matrix, 0) - true_positive

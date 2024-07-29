@@ -2,8 +2,9 @@ import math
 import torch
 import torch.nn as nn
 from einops import repeat
-from models.uvmamba.utils import nchw_to_nlc, nlc_to_nchw
-from DCNv4 import DCNv4
+from models.utils import nchw_to_nlc, nlc_to_nchw
+from functools import partial
+from timm.models.layers import DropPath
 
 try:
     import selective_scan_cuda_core
@@ -242,11 +243,12 @@ class OSSM(nn.Module):
         #     stride=1)
 
         # in proj =======================================
-        self.in_proj = nn.Conv2d(
-                    in_channels=d_model,
-                    out_channels=d_inner * 2,
-                    kernel_size=1,
-                    stride=1)
+        self.in_proj = nn.Linear(d_model, d_inner * 2, bias=bias)
+        # self.in_proj = nn.Conv2d(
+        #             in_channels=d_model,
+        #             out_channels=d_inner * 2,
+        #             kernel_size=1,
+        #             stride=1)
 
         self.act = nn.SiLU()
 
@@ -269,11 +271,12 @@ class OSSM(nn.Module):
         del self.x_proj
 
         # out proj =======================================
-        self.out_proj = nn.Conv2d(
-                in_channels=d_inner,
-                out_channels=d_model,
-                kernel_size=1,
-                stride=1)
+        self.out_proj = nn.Linear(d_inner, d_model, bias=bias)
+        # self.out_proj = nn.Conv2d(
+        #         in_channels=d_inner,
+        #         out_channels=d_model,
+        #         kernel_size=1,
+        #         stride=1)
 
         self.dropout = nn.Dropout(dropout) if dropout > 0. else nn.Identity()
 
@@ -350,13 +353,14 @@ class OSSM(nn.Module):
         D._no_weight_decay = True
         return D
 
-    def forward(self, x: torch.Tensor, **kwargs):
+    def forward(self, x, hw_shape):
 
         x = self.in_proj(x)
-        x, z = x.chunk(2, dim=1)  # (b, h, w, d)
+        x, z = x.chunk(2, dim=2)
         z = self.act(z)
 
         # x = x.permute(0, 3, 1, 2).contiguous()
+        x = nlc_to_nchw(x, hw_shape)
         x = self.conv2d(x)  # (b, d, h, w)
         x = self.act(x)
 
@@ -397,3 +401,94 @@ class OSSM(nn.Module):
         y = z * y_res
         out = self.dropout(self.out_proj(y))
         return out
+
+
+class Mlp(nn.Module):
+    def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.,channels_first=False):
+        super().__init__()
+        out_features = out_features or in_features
+        hidden_features = hidden_features or in_features
+
+        Linear = partial(nn.Conv2d, kernel_size=1, padding=0) if channels_first else nn.Linear
+        self.fc1 = Linear(in_features, hidden_features)
+        self.act = act_layer()
+        self.fc2 = Linear(hidden_features, out_features)
+        self.drop = nn.Dropout(drop)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.act(x)
+        x = self.drop(x)
+        x = self.fc2(x)
+        x = self.drop(x)
+        return x
+
+
+class OSSBlock(nn.Module):
+    def __init__(
+            self,
+            hidden_dim: int = 0,
+            drop_path: float = 0,
+            norm_layer=partial(nn.LayerNorm, eps=1e-6),
+            # =============================
+            ssm_d_state: int = 16,
+            ssm_ratio=2.0,
+            ssm_dt_rank = "auto",
+            ssm_act_layer=nn.SiLU,
+            ssm_conv: int = 3,
+            ssm_conv_bias=True,
+            ssm_drop_rate: float = 0,
+            ssm_init="v0",
+            forward_type="v2",
+            # =============================
+            mlp_ratio=4.0,
+            mlp_act_layer=nn.GELU,
+            mlp_drop_rate: float = 0.0,
+            # =============================
+            use_checkpoint: bool = False,
+            post_norm: bool = False,
+            **kwargs,
+    ):
+        super().__init__()
+        self.ssm_branch = ssm_ratio > 0
+        self.mlp_branch = mlp_ratio > 0
+        self.use_checkpoint = use_checkpoint
+        self.post_norm = post_norm
+
+        if self.ssm_branch:
+            self.norm = norm_layer(hidden_dim)
+            self.op = OSSM(
+                d_model=hidden_dim,
+                d_state=ssm_d_state,
+                ssm_ratio=ssm_ratio,
+                dt_rank=ssm_dt_rank,
+                act_layer=ssm_act_layer,
+                d_conv=ssm_conv,
+                conv_bias=ssm_conv_bias,
+                # ==========================
+                dropout=ssm_drop_rate,
+                initialize=ssm_init,
+                # ==========================
+                forward_type=forward_type,
+            )
+
+        self.drop_path = DropPath(drop_path)
+
+        if self.mlp_branch:
+            self.norm2 = norm_layer(hidden_dim)
+            mlp_hidden_dim = int(hidden_dim * mlp_ratio)
+            self.mlp = Mlp(in_features=hidden_dim, hidden_features=mlp_hidden_dim, act_layer=mlp_act_layer,
+                           drop=mlp_drop_rate, channels_first=False)
+
+    def forward(self, input: torch.Tensor):
+        if self.ssm_branch:
+            if self.post_norm:
+                x = input + self.drop_path(self.norm(self.op(input)))
+            else:
+                x = input + self.drop_path(self.op(self.norm(input)))
+        if self.mlp_branch:
+            if self.post_norm:
+                x = x + self.drop_path(self.norm2(self.mlp(x)))  # FFN
+            else:
+                x = x + self.drop_path(self.mlp(self.norm2(x)))  # FFN
+        return x

@@ -1,14 +1,15 @@
 MODE: "semantic"
-BACKBONE: "samba"
-
+BACKBONE: "deform_uvmamba_unet"
+# BACKBONE: "deform_uvmamba_segformer"
 
 DATASET:
   dataset: uvseg
-  dataset_folder: "/data/dataset/uv_beijing_crop/beijing-512"
-  num_workers: 8
+  city: xian
+  dataset_folder: "/data/dataset/uv_data/xian"
+  num_workers: 4
   target: "semantic"
   norm: True
-  crop_size: [512, 512]
+  crop_size: [1024, 1024]
   num_classes: 2
   ignore_index: -1
   avoid_index: -1
@@ -21,8 +22,8 @@ MODEL:
     num_stages: 4
     num_layers: [2, 2, 2, 2]
     num_heads: [1, 2, 5, 8]
-    patch_sizes: [7, 3, 3, 3]
-    strides: [4, 2, 2, 2]
+    patch_sizes: [3, 3, 3, 3]
+    strides: [2, 2, 2, 2]
     sr_ratios: [8, 4, 2, 1]
     out_indices: [0, 1, 2, 3]
     mlp_ratio: 4
@@ -38,12 +39,12 @@ MODEL:
 PIPELINE:
   train:
     epochs: 100
-    rdm_seed: null
+    rdm_seed: 2086862621
     display_step: 20
     val_every: 1
     val_after: 0
     save_total_limit: 5
 
 PATH:
-  ds_config: "config/ds_config/uvmamba/deform_uvmamba_ds_config_beijing_crop.json"
-  res_dir: "result/deform_uvmamba_beijing_crop"
+  ds_config: "config/ds_config/uvmamba/deform_unet_uvmamba_ds_config_xian.json"
+  res_dir: "result/deform_unet_uvmamba_xian"

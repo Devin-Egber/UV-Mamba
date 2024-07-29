@@ -13,7 +13,7 @@
         0.999
       ],
       "eps": 1.0e-8,
-      "weight_decay": 0.0
+      "weight_decay": 0.05
     }
   },
 
@@ -24,10 +24,12 @@
       "total_num_steps": 3300,
       "warmup_min_lr": 1.0e-6,
       "warmup_max_lr": 0.0002,
-      "warmup_num_steps": 990
+      "warmup_num_steps": 660,
+      "warmup_type": "linear",
+      "last_batch_iteration": 0
     }
   },
-
+  
   "bf16": {
     "enabled": false
   },
@@ -45,7 +47,7 @@
   "tensorboard": {
     "enabled": true,
     "output_path": "log/",
-    "job_name": "segformer_xian"
+    "job_name": "deform_unet_uvmamba_xian"
   },
   "wall_clock_breakdown": false
 }

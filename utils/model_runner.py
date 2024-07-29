@@ -3,9 +3,9 @@ import time
 import torch
 import torch.distributed as dist
 from tqdm import tqdm
-from utils.metrics import IoU
-# from utils.sem_metrics import IoU
-from utils.visualisation_utils import save_images
+# from utils.metrics import IoU
+from utils.sem_metrics import IoU
+# from utils.visualisation_utils import save_images
 from utils.distributed_utils import get_dist_info, logger
 
 
@@ -31,10 +31,9 @@ def run_iterate(model, data_loader, criterion, config, mode="train", device=None
         if mode != "train":
             with torch.no_grad():
                 out = model(x)
-            if hasattr(config, 'show_dir') and config.show_dir is not None:
-                save_images(out, config, i * config.batch_size)
         else:
             out = model(x)
+
         loss = criterion(out.float(), y.long())
 
         if mode == "train":

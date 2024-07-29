@@ -10,25 +10,13 @@ from utils.distributed_utils import logger
 
 def get_model(config):
 
-    if config.BACKBONE == "segformer":
-        from models.Segformer.segformer import SegFormer
-        base_model = SegFormer(num_classes=2, phi='b0', pretrained=False)
+    if config.BACKBONE == "deform_uvmamba_unet":
+        from models.model import DefromMambaUnet
+        base_model = DefromMambaUnet(config)
 
-    elif config.BACKBONE == "segmamba":
-        from models.Segmamba.segmamba import SegMamba
-        base_model = SegMamba(num_classes=2, phi='b0', pretrained=False)
-
-    elif config.BACKBONE == "uvmamba":
-        from models.uvmamba.model import UVMamba
-        base_model = UVMamba(config)
-
-    elif config.BACKBONE == "deform_uvmamba":
-        from models.uvmamba.model import DefromUVMamba
-        base_model = DefromUVMamba(config)
-
-    elif config.BACKBONE == "samba":
-        from models.uvmamba.model import Samba
-        base_model = Samba(config)
+    # elif config.BACKBONE == "deform_uvmamba_segformer":
+    #     from models.uvmamba.model import DefromMambaSegformer
+    #     base_model = DefromMambaSegformer(config)
 
     else:
         raise NotImplementedError

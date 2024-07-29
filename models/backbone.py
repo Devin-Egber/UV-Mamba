@@ -1,35 +1,19 @@
 import torch
 import torch.nn as nn
 from torch.nn import ModuleList
-
 import math
-from transformers.models.mamba.modeling_mamba import MambaMixer
 import argparse
 
-from models.uvmamba.utils import nchw_to_nlc, nlc_to_nchw
-from models.uvmamba.utils import trunc_normal_init, constant_init, normal_init
-from models.uvmamba.module import DropPath
-from models.uvmamba.module import PatchEmbed, PatchEmbedDeform, PatchEmbedModulatedDeform
-from models.uvmamba.module import DeformableConv2d, ModulatedDeformConv2d
-from DCNv4.modules import DCNv4
+from models.ossm import OSSM
+from models.utils import nchw_to_nlc, nlc_to_nchw
+from models.utils import trunc_normal_init, constant_init, normal_init
+from models.module import DropPath, Stem
+from models.module import PatchEmbed
+from DCNv4 import DCNv4
+from transformers.models.mamba.modeling_mamba import MambaMixer
 
 
 class MixFFN(nn.Module):
-    """An implementation of MixFFN of Segformer.
-
-    The differences between MixFFN & FFN:
-        1. Use 1X1 Conv to replace Linear layer.
-        2. Introduce 3X3 Conv to encode positional information.
-    Args:
-        embed_dims (int): The feature dimension. Same as
-            `MultiheadAttention`. Defaults: 256.
-        feedforward_channels (int): The hidden dimension of FFNs.
-            Defaults: 1024.
-        ffn_drop (float, optional): Probability of an element to be
-            zeroed in FFN. Default 0.0.
-        dropout_layer (obj:`ConfigDict`): The dropout_layer used
-            when adding the shortcut.
-    """
 
     def __init__(self,
                  embed_dims,
@@ -84,20 +68,6 @@ class MixFFN(nn.Module):
 
 
 class MixFFNDeform(nn.Module):
-    """An implementation of MixFFNDeform.
-
-    The differences between MixFFN & FFN:
-        1. Use 1X1 Conv to replace Linear layer.
-        2. Introduce 3X3 Conv to encode positional information.
-    Args:
-        embed_dims (int): The feature dimension.
-            Defaults: 256.
-        feedforward_channels (int): The hidden dimension of FFNs.
-            Defaults: 1024.
-        ffn_drop (float, optional): Probability of an element to be zeroed in FFN.
-            Default 0.0.
-        dropout_layer (obj:`ConfigDict`): The dropout_layer used when adding the shortcut.
-    """
 
     def __init__(self,
                  embed_dims,
@@ -137,7 +107,7 @@ class MixFFNDeform(nn.Module):
             kernel_size=1,
             stride=1)
 
-        self.conv = DCNv4(
+        self.dcnv4 = DCNv4(
                     channels=embed_dims,
                     kernel_size=3,
                     stride=1,
@@ -152,24 +122,15 @@ class MixFFNDeform(nn.Module):
             dropout_layer['drop_prob']) if dropout_layer else torch.nn.Identity()
 
     def forward(self, x, hw_shape, identity=None):
-        # out = self.norm(self.conv(x))
+        x = x + self.dropout_layer(self.norm1(self.dcnv4(x)))
+        # x = self.norm1(x)
 
         out = nlc_to_nchw(x, hw_shape)
 
         out = self.layers(out)
-        # for layer in self.layers:
-        #     if isinstance(layer, DCNv4):
-        #         out = nchw_to_nlc(out)
-        #         out = layer(out)
-        #         out = nlc_to_nchw(out, hw_shape)
-        #     out = layer(out)
-
         out = nchw_to_nlc(out)
-        out = self.norm1(self.conv(out))
-        if identity is None:
-            identity = x
-        out = identity + self.dropout_layer(out)
-        return self.norm2(out)
+        out = x + self.dropout_layer(self.norm2(out))
+        return out
 
 
 class MambaEncoderLayer(nn.Module):
@@ -211,23 +172,44 @@ class MambaEncoderLayer(nn.Module):
 
         self.mamba_layer = nn.ModuleList()
 
-        mamba_layer_cfg = dict(
-            hidden_size=embed_dims,
-            state_size=4,
-            intermediate_size=384,
-            conv_kernel=4,
-            # time_step_rank=math.ceil(embed_dims / 4),
-            time_step_rank=embed_dims,
-            use_conv_bias=True,
-            hidden_act="silu",
-            use_bias=False,
+        self.mamba_layer = OSSM(
+            d_model=embed_dims,
+            d_state=16,
+            ssm_ratio=2.0,
+            dt_rank="auto",
+            # act_layer=nn.SiLU,
+            # ==========================
+            d_conv=3,
+            conv_bias=True,
+            # ==========================
+            dropout=0,
+            # bias=False,
+            # ==========================
+            # dt_min=0.001,
+            # dt_max=0.1,
+            # dt_init="random",
+            # dt_scale="random",
+            # dt_init_floor=1e-4,
+            initialize="v0",
+            # ==========================
+            forward_type="v2",
         )
-        config = argparse.Namespace(**mamba_layer_cfg)
-        self.mamba_layer.append(MambaMixer(config, cur_index))
-
         self.norm2 = nn.LayerNorm(embed_dims)
 
-        self.ffn = MixFFN(
+        # self.dcnv4 = DCNv4(
+        #     channels=embed_dims,
+        #     kernel_size=3,
+        #     stride=1,
+        #     padding=(3 - 1) // 2,
+        #     group=2)
+
+        self.ffn = MixFFNDeform(
+            embed_dims=embed_dims,
+            feedforward_channels=feedforward_channels,
+            ffn_drop=drop_rate,
+            dropout_layer=dict(type='DropPath', drop_prob=drop_path_rate))
+
+        self.mix_ffn = MixFFN(
             embed_dims=embed_dims,
             feedforward_channels=feedforward_channels,
             ffn_drop=drop_rate,
@@ -237,42 +219,23 @@ class MambaEncoderLayer(nn.Module):
         self.dropout_layer = DropPath(
             dropout_layer['drop_prob']) if dropout_layer else torch.nn.Identity()
 
-        gate_out_dim = 3
-        self.gate_layers = nn.Sequential(
-                nn.Linear(gate_out_dim * embed_dims, gate_out_dim, bias=False),
-                nn.Softmax(dim=-1))
+        # self.gate_layers = nn.Sequential(
+        #         nn.Linear(gate_out_dim * embed_dims, gate_out_dim, bias=False),
+        #         nn.Softmax(dim=-1))
+
+        # self.fuse = nn.Linear(embed_dims*2, embed_dims)
 
     def forward(self, x, hw_shape, identity=None):
         if identity is None:
             identity = x
 
         B = x.shape[0]
-        x_inputs = [x, torch.flip(x, [1])]
-        rand_index = torch.randperm(x.size(1))
-        x_inputs.append(x[:, rand_index])
-        x_inputs = torch.cat(x_inputs, dim=0)
-        x = self.norm1(x_inputs)
-
-        for layer in self.mamba_layer:
-            x = layer(x)
-
-        forward_x, reverse_x, shuffle_x = torch.split(x, B, dim=0)
-        reverse_x = torch.flip(reverse_x, [1])
-        # reverse the random index
-        rand_index = torch.argsort(rand_index)
-        shuffle_x = shuffle_x[:, rand_index]
-        mean_forward_x = torch.mean(forward_x, dim=1)
-        mean_reverse_x = torch.mean(reverse_x, dim=1)
-        mean_shuffle_x = torch.mean(shuffle_x, dim=1)
-        gate = torch.cat([mean_forward_x, mean_reverse_x, mean_shuffle_x], dim=-1)
-        gate = self.gate_layers(gate)
-        gate = gate.unsqueeze(-1)
-        x = gate[:, 0:1] * forward_x + gate[:, 1:2] * reverse_x + gate[:, 2:3] * shuffle_x
-
+        x = self.norm1(x)
+        x = self.ffn(x, hw_shape, identity=x)
+        x = self.mamba_layer(x, hw_shape)
+        x = self.norm2(x)
+        x = self.mix_ffn(x, hw_shape, identity=x)
         x = identity + self.dropout_layer(self.proj_drop(x))
-        # x = (forward_x + reverse_x + shuffle_x) / 3
-
-        x = self.ffn(self.norm2(x), hw_shape, identity=x)
         return x
 
 
@@ -313,7 +276,7 @@ class DeformMambaEncoderLayer(nn.Module):
         self.norm1 = nn.LayerNorm(embed_dims)
 
         self.mamba_layer = nn.ModuleList()
-       
+
         # mamba_layer_cfg = dict(
         #     hidden_size=embed_dims,
         #     state_size=4,
@@ -505,7 +468,6 @@ class MixVisionMamba(nn.Module):
 
         return outs
 
-
 class DeformMixVisionMamba(nn.Module):
     """The backbone of uvmamba.
     Args:
@@ -564,25 +526,27 @@ class DeformMixVisionMamba(nn.Module):
         self.out_indices = out_indices
         assert max(out_indices) < self.num_stages
 
-        # transformer encoder
         dpr = [
             x.item()
             for x in torch.linspace(0, drop_path_rate, sum(num_layers))
         ]  # stochastic num_layer decay rule
 
         cur = 0
+
+        self.stem = Stem(in_channels=in_channels, stem_hidden_dim=embed_dims*2, out_channels=embed_dims)
+
         self.layers = ModuleList()
         for i, num_layer in enumerate(num_layers):
-            embed_dims_i = embed_dims * num_heads[i]
-            patch_embed = PatchEmbedDeform(
-                in_channels=in_channels,
+            embed_dims_i = self.embed_dims * num_heads[i]
+            patch_embed = PatchEmbed(
+                in_channels=embed_dims,
                 embed_dims=embed_dims_i,
                 kernel_size=patch_sizes[i],
                 stride=strides[i],
                 padding=patch_sizes[i] // 2)
 
             layer = ModuleList([
-                DeformMambaEncoderLayer(
+                MambaEncoderLayer(
                     embed_dims=embed_dims_i,
                     feedforward_channels=mlp_ratio * embed_dims_i,
                     drop_rate=drop_rate,
@@ -590,26 +554,14 @@ class DeformMixVisionMamba(nn.Module):
                     drop_path_rate=dpr[cur + idx]) for idx in range(num_layer)
             ])
 
-            in_channels = embed_dims_i
+            embed_dims = embed_dims_i
             norm = nn.LayerNorm(embed_dims_i)
             self.layers.append(ModuleList([patch_embed, layer, norm]))
             cur += num_layer
 
-    def init_weights(self):
-            for m in self.modules():
-                if isinstance(m, nn.Linear):
-                    trunc_normal_init(m, std=.02, bias=0.)
-                elif isinstance(m, nn.LayerNorm):
-                    constant_init(m, val=1.0, bias=0.)
-                elif isinstance(m, nn.Conv2d):
-                    fan_out = m.kernel_size[0] * m.kernel_size[
-                        1] * m.out_channels
-                    fan_out //= m.groups
-                    normal_init(
-                        m, mean=0, std=math.sqrt(2.0 / fan_out), bias=0)
-
     def forward(self, x):
         outs = []
+        x = self.stem(x)
 
         for i, layer in enumerate(self.layers):
             x, hw_shape = layer[0](x)
@@ -621,4 +573,3 @@ class DeformMixVisionMamba(nn.Module):
                 outs.append(x)
 
         return outs
-

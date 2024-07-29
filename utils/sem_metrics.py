@@ -272,7 +272,10 @@ class IoU(Metric):
             acc = true_positive / np.sum(conf_matrix, 1)
 
         all_acc = true_positive.sum() / conf_matrix.sum()
+        # metrics = {'IoU': iou, 'mIoU': float(iou[1] * 100), 'Acc': acc, 'OA': all_acc * 100}
+
         metrics = {'IoU': iou, 'mIoU': np.nanmean(iou) * 100, 'Acc': acc, 'OA': all_acc * 100}
+
         return metrics
 
     def get_miou_acc(self):
