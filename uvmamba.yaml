@@ -1,4 +1,4 @@
-name: uv-mamba
+name: uvmamba
 channels:
   - pytorch
   - nvidia
