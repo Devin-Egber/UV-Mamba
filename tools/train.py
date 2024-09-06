@@ -12,11 +12,7 @@ from utils.model_runner import run_iterate, init_random_seed
 from utils.distributed_utils import get_dist_info, all_metrics_reduce, dist_barrier, logger
 
 from utils.dataset_utils import get_dataset, build_uv_dataloader
-# from losses import get_loss
 from utils.loss_function import get_loss
-
-
-# from src.utils.lr_scheduler import build_schduler
 
 def main(config):
     start_epoch = 1
@@ -65,11 +61,9 @@ def main(config):
 
     # Load weights from pre-trained models
     if config.fine_tune:
-        # assert os.path.isfile(config.PRETRAINED), f'the path of pretrained model {config.PRETRAINED}" is not valid!!'
-        # model_state_file = config.PRETRAINED
-        # logger.info(f'=> Loading model from {model_state_file}')
-        # pretrain_dict = torch.load(model_state_file)['state_dict']
-        with open('test_code/uvmamba_layer4.pkl', 'rb') as file:
+        assert os.path.isfile(config.PRETRAINED), f'the path of pretrained model {config.PRETRAINED}" is not valid!!'
+        model_weights_file = config.PRETRAINED
+        with open(model_weights_file, 'rb') as file:
             loaded_backbone_dict = pickle.load(file)
 
         model_dict = model.state_dict()
@@ -83,12 +77,6 @@ def main(config):
 
     with open(os.path.join(config.PATH.res_dir, "conf.json"), "w") as file:
         file.write(json.dumps(vars(config), indent=4))
-
-    # optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.0)
-    # scheduler = build_schduler(config, optimizer, len(train_loader))
-    #
-    # model, optimizer, _, lr_scheduler = deepspeed.initialize(
-    #     args=config, model=model, model_parameters=model.parameters(), optimizer=optimizer, lr_scheduler=scheduler)
 
     # Initialize the model
     model, optimizer, _, scheduler = deepspeed.initialize(
@@ -170,7 +158,6 @@ def main(config):
             trainlog[epoch] = {**train_metrics}
             checkpoint(trainlog, config.PATH)
 
-    # 保存最后训练的模型
     model.save_checkpoint(checkpoint_path)
 
     logger.info(f"***** Running testing *****")

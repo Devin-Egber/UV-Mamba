@@ -30,16 +30,6 @@ def get_model(config):
         from models.model import UVMambaReverse
         base_model = UVMambaReverse(config)
 
-    elif config.BACKBONE == "deeplabv3":
-        from models.deeplabv3 import Deeplabv3
-        base_model = Deeplabv3(2)
-
-    elif config.BACKBONE == "unet":
-        from models.unet import UNet
-        base_model = UNet(3, 2)
-
-
-
     else:
         raise NotImplementedError
 
@@ -122,7 +112,6 @@ def init_weights(module):
 
 def load_weights(model, checkpoint_path):
     model.load_state_dict(torch.load(checkpoint_path)["module"], strict=False)
-    # self.load_state_dict(torch.load(checkpoint_path), strict=False)
 
 
 def save_state_dict(model, path, save_total_limit):

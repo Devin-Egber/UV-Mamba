@@ -1,4 +1,4 @@
-work_dir="/data/mamba/Ablation"
+work_dir="/data/project/UV-Mamba"
 export PYTHONPATH=$work_dir
 
 

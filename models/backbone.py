@@ -313,7 +313,7 @@ class DeformMixVisionMamba(nn.Module):
 
 
 # ====================================
-# 消融实验一：去掉DCNV4
+# Ablation 1：without SADE
 # ====================================
 
 class MambaEncoderLayer(nn.Module):
@@ -448,7 +448,7 @@ class MixVisionMamba(nn.Module):
         return outs
 
 # ====================================
-# 消融实验二: 去除SSM
+# Ablation 2: without MSSM
 # ====================================
 
 class DeformEncoderLayer(nn.Module):
@@ -569,7 +569,7 @@ class DeformMixVision(nn.Module):
 
 
 # ====================================
-# 消融实验三：DCN与Mamba并行
+# Ablation 3：SADE and MSSM are arranged parallel
 # ====================================
 class ParallelDeformMambaEncoderLayer(nn.Module):
 
@@ -714,7 +714,7 @@ class ParallelDeformMixVisionMamba(nn.Module):
 
 
 # ====================================
-# 消融实验：SSM --> DCN
+# Ablation 4 : MSSM --> SADE
 # ====================================
 
 class MambaDeformEncoderLayer(nn.Module):

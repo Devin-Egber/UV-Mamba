@@ -19,9 +19,7 @@ MODEL:
     in_channels: 3
     embed_dims: 32
     num_stages: 4
-#    num_layers: [2, 2, 2, 2]
-    num_layers: [ 4, 4, 4, 4 ]
-
+    num_layers: [2, 2, 2, 2]
     num_heads: [1, 2, 5, 8]
     patch_sizes: [3, 3, 3, 3]
     strides: [2, 2, 2, 2]
@@ -36,6 +34,8 @@ MODEL:
     inchannels: [32, 64, 160, 256]
     num_classes: 2
     channels: 256
+
+PRETRAINED: pretrain/uvmamba_weights.pkl
 
 PIPELINE:
   train:

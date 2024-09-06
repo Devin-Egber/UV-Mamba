@@ -5,7 +5,7 @@ from models.module import DoubleConv
 
 from models.backbone import DeformMixVisionMamba
 
-# 消融实验
+# Ablation Study
 from models.backbone import MixVisionMamba, DeformMixVision, ParallelDeformMixVisionMamba, MambaMixVisionDeform
 
 
@@ -56,7 +56,6 @@ class Decoder(nn.Module):
         return out
 
 
-# 论文主架构
 class UVMamba(nn.Module):
     def __init__(self, config):
         super(UVMamba, self).__init__()
@@ -71,13 +70,10 @@ class UVMamba(nn.Module):
         x = F.interpolate(x, size=(H, W), mode='bilinear', align_corners=True)
         return x
 
-# ====================================
-# 消融实验用到的模型架构
-# ====================================
 
 
 # ====================================
-# 消融实验一：去掉DCNV4
+# Ablation 1: without SADE
 # ====================================
 
 class UVMambaNoDeform(nn.Module):
@@ -96,9 +92,8 @@ class UVMambaNoDeform(nn.Module):
 
 
 # ====================================
-# 消融实验二: 去除SSM
+# Ablation 2: without MSSM
 # ====================================
-
 
 class UVMambaNoSSM(nn.Module):
     def __init__(self, config):
@@ -114,9 +109,9 @@ class UVMambaNoSSM(nn.Module):
         x = F.interpolate(x, size=(H, W), mode='bilinear', align_corners=True)
         return x
 
-# ====================================
-# 消融实验三：DCN与Mamba并行
-# ====================================
+# ==================================================
+# Ablation 3: SADE and MSSM are arranged parallel
+# ==================================================
 
 
 class UVMambaParallel(nn.Module):
@@ -134,7 +129,7 @@ class UVMambaParallel(nn.Module):
         return x
 
 # ====================================
-# 消融实验：SSM --> DCN
+# Ablation 4: SSM --> DCN
 # ====================================
 
 
