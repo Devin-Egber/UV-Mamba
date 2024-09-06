@@ -38,6 +38,10 @@ class UVSegDataset(Dataset):
         img_path = os.path.join(self.image_dir, self.images[index])
         mask_path = os.path.join(self.mask_dir, self.images[index])
 
+        img_name = img_path.split("/")[-1][0:-4]
+        mask_name = mask_path.split("/")[-1][0:-4]
+        assert img_name == mask_name
+
         image = np.array(Image.open(img_path).convert("RGB"))
         mask = np.array(Image.open(mask_path), dtype=np.uint8)
         mask[mask != 0] = 1
@@ -47,4 +51,5 @@ class UVSegDataset(Dataset):
             image = augmentations['image']
             mask = augmentations['mask']
 
+        # return image, mask, img_name
         return image, mask

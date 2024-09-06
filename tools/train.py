@@ -69,7 +69,7 @@ def main(config):
         # model_state_file = config.PRETRAINED
         # logger.info(f'=> Loading model from {model_state_file}')
         # pretrain_dict = torch.load(model_state_file)['state_dict']
-        with open('test_code/backbone_full.pkl', 'rb') as file:
+        with open('test_code/uvmamba_layer4.pkl', 'rb') as file:
             loaded_backbone_dict = pickle.load(file)
 
         model_dict = model.state_dict()
@@ -206,7 +206,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_file',
                         type=str,
-                        default="config/uv/uv_mamba/deform_uvmamba_inria.yaml",
+                        default="config/uv/uvmamba_beijing.yaml",
                         help='Configuration (.json) file to use')
     parser.add_argument('--rdm_seed', type=int, default=None, help='Random seed')
     parser.add_argument('--local_rank', type=int, default=0,

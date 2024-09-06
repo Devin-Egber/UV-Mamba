@@ -10,13 +10,35 @@ from utils.distributed_utils import logger
 
 def get_model(config):
 
-    if config.BACKBONE == "deform_uvmamba_unet":
-        from models.model import DefromMambaUnet
-        base_model = DefromMambaUnet(config)
+    if config.BACKBONE == "uvmamba":
+        from models.model import UVMamba
+        base_model = UVMamba(config)
 
-    # elif config.BACKBONE == "deform_uvmamba_segformer":
-    #     from models.uvmamba.model import DefromMambaSegformer
-    #     base_model = DefromMambaSegformer(config)
+    elif config.BACKBONE == "uvmamba_no_deform":
+        from models.model import UVMambaNoDeform
+        base_model = UVMambaNoDeform(config)
+
+    elif config.BACKBONE == "uvmamba_no_ssm":
+        from models.model import UVMambaNoSSM
+        base_model = UVMambaNoSSM(config)
+
+    elif config.BACKBONE == "uvmamba_parallel":
+        from models.model import UVMambaParallel
+        base_model = UVMambaParallel(config)
+
+    elif config.BACKBONE == "uvmamba_reverse":
+        from models.model import UVMambaReverse
+        base_model = UVMambaReverse(config)
+
+    elif config.BACKBONE == "deeplabv3":
+        from models.deeplabv3 import Deeplabv3
+        base_model = Deeplabv3(2)
+
+    elif config.BACKBONE == "unet":
+        from models.unet import UNet
+        base_model = UNet(3, 2)
+
+
 
     else:
         raise NotImplementedError

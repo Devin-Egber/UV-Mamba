@@ -46,7 +46,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_file',
                         type=str,
-                        default="config/uv/uv_mamba/deform_uvmamba_beijing.yaml",
+                        default="config/uv/uvmamba_beijing.yaml",
                         help='Configuration (.json) file to use')
 
     parser.add_argument('--local_rank', type=int, default=0,

@@ -11,7 +11,8 @@ from utils.model_runner import run_iterate
 from utils.distributed_utils import logger
 from utils.dataset_utils import get_dataset, build_uv_dataloader
 
-from losses import get_loss
+# from losses import get_loss
+from utils.loss_function import get_loss
 import random
 
 def main(config):

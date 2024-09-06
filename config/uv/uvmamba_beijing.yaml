@@ -1,16 +1,17 @@
 MODE: "semantic"
-BACKBONE: "deform_uvmamba_unet"
+BACKBONE: "uvmamba"
 
 
 DATASET:
-  dataset: cityscapes
-  dataset_folder: "/data/dataset/city"
-  num_workers: 8
+  dataset: uvseg
+  city: beijing
+  dataset_folder: "/data/dataset/uv_data/beijing"
+  num_workers: 4
   target: "semantic"
   norm: True
   crop_size: [1024, 1024]
-  num_classes: 19
-  ignore_index: 255
+  num_classes: 2
+  ignore_index: -1
   avoid_index: -1
 
 
@@ -19,7 +20,9 @@ MODEL:
     in_channels: 3
     embed_dims: 32
     num_stages: 4
-    num_layers: [2, 2, 2, 2]
+#    num_layers: [2, 2, 2, 2]
+    num_layers: [ 1, 1, 1, 1 ]
+
     num_heads: [1, 2, 5, 8]
     patch_sizes: [3, 3, 3, 3]
     strides: [2, 2, 2, 2]
@@ -32,18 +35,18 @@ MODEL:
 
   head:
     inchannels: [32, 64, 160, 256]
-    num_classes: 19
+    num_classes: 2
     channels: 256
 
 PIPELINE:
   train:
     epochs: 100
-    rdm_seed: null
-    display_step: 200
-    val_every: 5
+    rdm_seed: 929722093
+    display_step: 20
+    val_every: 1
     val_after: 0
     save_total_limit: 5
 
 PATH:
-  ds_config: "config/ds_config/uvmamba/deform_uvmamba_ds_config_cityscapes.json"
-  res_dir: "result/deform_uvmamba_cityscapes"
+  ds_config: "config/ds_config/uvmamba_beijing_ds_config.json"
+  res_dir: "result/uvmamba_beijing"

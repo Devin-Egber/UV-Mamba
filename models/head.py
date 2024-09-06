@@ -70,7 +70,7 @@ class DoubleConv(nn.Module):
         return self.conv(input)
 
 
-class UnetHead(nn.Module):
+class Decoder(nn.Module):
     def __init__(self, inchannels, num_classes, channels=256, interpolate_mode='bilinear', dropout_ratio=0.1):
         super().__init__()
 

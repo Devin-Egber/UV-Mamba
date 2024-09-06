@@ -1,7 +1,5 @@
 import torch
 import torch.nn as nn
-from torchvision.ops import deform_conv2d
-from DCNv4.modules import DCNv4
 
 
 class Stem(nn.Module):
@@ -10,15 +8,15 @@ class Stem(nn.Module):
         hidden_dim = stem_hidden_dim
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels, hidden_dim, kernel_size=7, stride=2,
-                      padding=3, bias=False),  # 112x112
+                      padding=3, bias=False),
             nn.BatchNorm2d(hidden_dim),
             nn.ReLU(inplace=True),
             nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1,
-                      padding=1, bias=False),  # 112x112
+                      padding=1, bias=False),
             nn.BatchNorm2d(hidden_dim),
             nn.ReLU(inplace=True),
             nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1,
-                      padding=1, bias=False),  # 112x112
+                      padding=1, bias=False),
             nn.BatchNorm2d(hidden_dim),
             nn.ReLU(inplace=True),
         )
@@ -27,14 +25,10 @@ class Stem(nn.Module):
                               kernel_size=3,
                               stride=1,
                               padding=1)
-        # self.norm = nn.LayerNorm(out_channels)
 
     def forward(self, x):
         x = self.conv(x)
         x = self.proj(x)
-        # _, _, H, W = x.shape
-        # x = x.flatten(2).transpose(1, 2)
-        # x = self.norm(x)
         return x
 
 
@@ -84,129 +78,18 @@ class PatchEmbed(nn.Module):
         return x, out_size
 
 
+class DoubleConv(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(DoubleConv, self).__init__()
+        self.conv = nn.Sequential(nn.Conv2d(in_channels, out_channels, 3, padding=1),
+                                  nn.BatchNorm2d(out_channels),
+                                  nn.ReLU(inplace=True),
+                                  nn.Conv2d(out_channels, out_channels, 3, padding=1),
+                                  nn.BatchNorm2d(out_channels),
+                                  nn.ReLU(inplace=True))
 
-class PatchEmbedDeform(nn.Module):
-    """Image to Patch Embedding.
-
-    We use a conv layer to implement PatchEmbed.
-
-    Args:
-        in_channels (int): The num of input channels. Default: 3
-        embed_dims (int): The dimensions of embedding. Default: 768
-        kernel_size (int): The kernel_size of embedding conv. Default: 16.
-        stride (int, optional): The slide stride of embedding conv.
-            Default: None (Would be set as `kernel_size`).
-        dilation (int): The dilation rate of embedding conv. Default: 1.
-        bias (bool): Bias of embed conv. Default: True.
-    """
-
-    def __init__(self,
-                 in_channels=3,
-                 embed_dims=768,
-                 kernel_size=16,
-                 stride=None,
-                 padding=1,
-                 dilation=1,
-                 bias=True):
-        super().__init__()
-
-        self.embed_dims = embed_dims
-
-        if stride is None:
-            stride = kernel_size
-
-        self.projection = nn.Conv2d(
-                            in_channels=in_channels,
-                            out_channels=embed_dims,
-                            kernel_size=kernel_size,
-                            stride=stride,
-                            padding=padding,
-                            dilation=dilation,
-                            bias=bias)
-
-        self.conv = DCNv4(channels=embed_dims, group=2)
-
-        self.norm1 = nn.LayerNorm(embed_dims)
-        self.norm2 = nn.LayerNorm(embed_dims)
-
-    def forward(self, x):
-        """
-        Args:
-            x (Tensor): Has shape (B, C, H, W). In most case, C is 3.
-
-        Returns:
-            tuple: Contains merged results and its spatial shape.
-
-                - x (Tensor): Has shape (B, out_h * out_w, embed_dims)
-                - out_size (tuple[int]): Spatial shape of x, arrange as
-                    (out_h, out_w).
-        """
-
-        x = self.projection(x)
-        out_size = (x.shape[2], x.shape[3])
-        x = x.flatten(2).transpose(1, 2)
-        # x = self.norm1(x)
-
-        # x = self.conv(x)
-        x = self.norm2(x)
-
-        return x, out_size
-
-
-class PatchEmbedModulatedDeform(nn.Module):
-    """Image to Patch Embedding.
-
-    We use a conv layer to implement PatchEmbed.
-
-    Args:
-        in_channels (int): The num of input channels. Default: 3
-        embed_dims (int): The dimensions of embedding. Default: 768
-        kernel_size (int): The kernel_size of embedding conv. Default: 16.
-        stride (int, optional): The slide stride of embedding conv.
-            Default: None (Would be set as `kernel_size`).
-        dilation (int): The dilation rate of embedding conv. Default: 1.
-    """
-
-    def __init__(self,
-                 in_channels=3,
-                 embed_dims=768,
-                 kernel_size=16,
-                 stride=None,
-                 padding=1,
-                 dilation=1):
-        super().__init__()
-
-        self.embed_dims = embed_dims
-
-        if stride is None:
-            stride = kernel_size
-
-        self.projection = ModulatedDeformConv2d(
-                                in_channels=in_channels,
-                                out_channels=embed_dims,
-                                kernel_size=kernel_size,
-                                stride=stride,
-                                padding=padding,
-                                dilation=dilation)
-
-        self.norm = nn.LayerNorm(embed_dims)
-
-    def forward(self, x):
-        """
-        Args:
-            x (Tensor): Has shape (B, C, H, W). In most case, C is 3.
-
-        Returns:
-                - x (Tensor): Has shape (B, out_h * out_w, embed_dims)
-                - out_size (tuple[int]): Spatial shape of x, arrange as (out_h, out_w).
-        """
-
-        x = self.projection(x)
-        out_size = (x.shape[2], x.shape[3])
-        x = x.flatten(2).transpose(1, 2)
-        if self.norm is not None:
-            x = self.norm(x)
-        return x, out_size
+    def forward(self, input):
+        return self.conv(input)
 
 
 def drop_path(x: torch.Tensor,
@@ -246,59 +129,6 @@ class DropPath(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return drop_path(x, self.drop_prob, self.training)
-
-
-
-
-
-
-
-
-class DeformableConv2d(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=0, dilation=1):
-        super(DeformableConv2d, self).__init__()
-        self.stride = stride
-        self.padding = padding
-        self.dilation = dilation
-        self.kernel_size = kernel_size
-        self.offset_conv = nn.Conv2d(in_channels, 2 * kernel_size * kernel_size, kernel_size=kernel_size, stride=stride, padding=padding)
-        self.weight = nn.Parameter(torch.randn(out_channels, in_channels, kernel_size, kernel_size))
-        self.bias = nn.Parameter(torch.randn(out_channels))
-
-    def forward(self, x):
-        offset = self.offset_conv(x)
-        return deform_conv2d(x, offset, self.weight, self.bias, stride=self.stride, padding=self.padding, dilation=self.dilation)
-
-
-class ModulatedDeformConv2d(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=0, dilation=1):
-        super(ModulatedDeformConv2d, self).__init__()
-        self.stride = stride
-        self.padding = padding
-        self.dilation = dilation
-        self.kernel_size = kernel_size
-        self.offset_conv = nn.Conv2d(in_channels, 2 * kernel_size * kernel_size, kernel_size=kernel_size, stride=stride, padding=padding)
-        self.mask_conv = nn.Conv2d(in_channels, kernel_size * kernel_size, kernel_size=kernel_size, stride=stride, padding=padding)
-        self.weight = nn.Parameter(torch.randn(out_channels, in_channels, kernel_size, kernel_size))
-        self.bias = nn.Parameter(torch.randn(out_channels))
-
-    def forward(self, x):
-        offset = self.offset_conv(x)
-        mask = torch.sigmoid(self.mask_conv(x))  # 将掩码值限制在 [0, 1] 范围内
-        N, C, H, W = x.shape
-        offset_groups = C // self.kernel_size ** 2
-
-        # 展开掩码并应用到偏移量
-        mask = mask.repeat(1, 2, 1, 1)
-        offset = offset * mask
-
-        return deform_conv2d(x, offset, self.weight, self.bias, stride=self.stride, padding=self.padding, dilation=self.dilation)
-
-
-
-
-
-
 
 
 

@@ -1,13 +1,12 @@
 {
-  "train_batch_size": 4,
+  "train_batch_size": 16,
   "gradient_accumulation_steps": 1,
   "steps_per_print": 1000,
-
 
   "optimizer": {
     "type": "AdamW",
     "params": {
-      "lr": 0.0002,
+      "lr": 0.001,
       "betas": [
         0.9,
         0.999
@@ -17,19 +16,20 @@
     }
   },
 
-
   "scheduler": {
     "type": "WarmupDecayLR",
     "params": {
-      "total_num_steps": 3300,
+      "total_num_steps": 37200,
       "warmup_min_lr": 1.0e-6,
-      "warmup_max_lr": 0.0002,
-      "warmup_num_steps": 660,
+      "warmup_max_lr": 0.001,
+      "warmup_num_steps": 3720,
       "warmup_type": "linear",
       "last_batch_iteration": 0
     }
   },
-  
+
+
+
   "bf16": {
     "enabled": false
   },
@@ -45,9 +45,9 @@
   },
 
   "tensorboard": {
-    "enabled": true,
+    "enabled": false,
     "output_path": "log/",
-    "job_name": "deform_unet_uvmamba_xian"
+    "job_name": "uvmamba_cityscapes"
   },
   "wall_clock_breakdown": false
 }

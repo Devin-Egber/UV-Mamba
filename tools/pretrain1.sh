@@ -1,13 +1,9 @@
-work_dir="/data/mamba/Segment"
+work_dir="/data/mamba/Ablation"
 export PYTHONPATH=$work_dir
 MASTER_PORT=32990
 
 
-CONFIG_FILE="config/uv/uv_mamba/deform_unet_uvmamba_xian.yaml"
-
-#CONFIG_FILE="config/uv/uv_mamba/deform_uvmamba_beijing_pretrain.yaml"
-# CONFIG_FILE="config/uv/uv_mamba/deform_unet_uvmamba_shenzhen.yaml"
-# CONFIG_FILE="config/uv/uv_mamba/deform_unet_uvmamba_beijing.yaml"
+CONFIG_FILE="config/uv/uvmamba_xian.yaml"
 
 
 
