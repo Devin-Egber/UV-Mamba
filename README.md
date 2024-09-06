@@ -1,5 +1,9 @@
 # UV-Mamba: A DCN-Enhanced State Space Model for Urban Village Boundary Identification inHigh-Resolution Remote Sensing Images
 
+<p align="center">
+    <img src="asserts/architecture.png">
+</p>
+
 ## Abstract
 
 This paper proposes a novel and efficient neural network model called UV-Mamba for accurate boundary detection in high-resolution remote sensing
