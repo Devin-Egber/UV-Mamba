@@ -46,7 +46,7 @@ The structure of datasets are aligned as follows:
 
 ## Training
 
-We use 1 GPU for training by default. Make sure you have modified the `dataset_folder` variable in [uv_mamba_cityscapes.yaml](config/uv/uvmamba_cityscapes.yaml) , [uvmamba_beijing.yaml](config/uv/uvmamba_beijing.yaml) and  [uvmamba_xian.yaml](config/uv/uvmamba_beijing.yaml).    
+We use 1 GPU for training by default. Make sure you have modified the `dataset_folder` variable in [uvmamba_cityscapes.yaml](config/uv/uvmamba_cityscapes.yaml) , [uvmamba_beijing.yaml](config/uv/uvmamba_beijing.yaml) and  [uvmamba_xian.yaml](config/uv/uvmamba_beijing.yaml).    
 
 First: pretrain ```UV-Mamba``` on ```Cityscapes```:
 
