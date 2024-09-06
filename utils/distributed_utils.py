@@ -4,6 +4,7 @@ import torch
 import torch.distributed as dist
 from tqdm import tqdm
 
+
 def is_dist_avail_and_initialized():
     if not dist.is_available():
         return False
@@ -17,6 +18,7 @@ def get_world_size():
         return 1
     return dist.get_world_size()
 
+
 def reduce_across_processes(val):
     if not is_dist_avail_and_initialized():
         # nothing to sync, but we still convert to tensor for consistency with the distributed case.
@@ -29,8 +31,6 @@ def reduce_across_processes(val):
     dist.barrier()
     dist.all_reduce(t, op=dist.ReduceOp.SUM)
     return t
-
-
 
 
 def get_dist_info():

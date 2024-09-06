@@ -8,15 +8,14 @@ import numpy as np
 def prepare_output(config):
     os.makedirs(config.res_dir, exist_ok=True)
 
+
 def checkpoint(log, config):
     for key, value in log.items():
         for k, v in value.items():
             if isinstance(v, np.ndarray):
                 log[key][k] = v.tolist()
 
-    with open(
-            os.path.join(config.res_dir, "trainlog.json"), "w"
-    ) as outfile:
+    with open(os.path.join(config.res_dir, "trainlog.json"), "w") as outfile:
         json.dump(log, outfile, indent=4)
 
 

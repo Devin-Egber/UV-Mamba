@@ -1,9 +1,16 @@
+"""
+Taken from https://github.com/davidtvs/PyTorch-ENet/blob/master/metric/confusionmatrix.py
+"""
+
 import numpy as np
-import torch
 import pandas as pd
+import torch
 
 
 class Metric(object):
+    """Base class for all metrics.
+    From: https://github.com/pytorch/tnt/blob/master/torchnet/meter/meter.py
+    """
 
     def reset(self):
         pass
@@ -30,13 +37,10 @@ class ConfusionMatrix(Metric):
 
     def __init__(self, num_classes, normalized=False, device='cpu', lazy=True):
         super().__init__()
-
         if device == 'cpu':
             self.conf = np.ndarray((num_classes, num_classes), dtype=np.int64)
         else:
-            # self.conf = torch.zeros((num_classes, num_classes)).cuda()
-            self.conf = torch.zeros((num_classes, num_classes)).to(device)
-
+            self.conf = torch.zeros((num_classes, num_classes)).cuda()
         self.normalized = normalized
         self.num_classes = num_classes
         self.device = device
@@ -181,7 +185,6 @@ def confusion_matrix_analysis(mat):
     return per_class, overall
 
 
-
 class IoU(Metric):
     """Computes the intersection over union (IoU) per class and corresponding
     mean (mIoU).
@@ -204,7 +207,15 @@ class IoU(Metric):
         super().__init__()
         self.conf_metric = ConfusionMatrix(num_classes, normalized, device=cm_device, lazy=lazy)
         self.lazy = lazy
-        self.ignore_index = ignore_index
+        if ignore_index is None:
+            self.ignore_index = None
+        elif isinstance(ignore_index, int):
+            self.ignore_index = (ignore_index,)
+        else:
+            try:
+                self.ignore_index = tuple(ignore_index)
+            except TypeError:
+                raise ValueError("'ignore_index' must be an int or iterable")
 
     def reset(self):
         self.conf_metric.reset()
@@ -235,11 +246,6 @@ class IoU(Metric):
         if target.dim() == 4:
             _, target = target.max(1)
 
-        if self.ignore_index is not None:
-            keep = target != self.ignore_index
-            predicted = predicted[keep]
-            target = target[keep]
-
         self.conf_metric.add(predicted.view(-1), target.view(-1))
 
     def value(self):
@@ -248,10 +254,9 @@ class IoU(Metric):
         The mean computation ignores NaN elements of the IoU array.
 
         Returns:
-            Dict: (IoU, mIoU, Acc, OA). The first output is the per class IoU,
+            Tuple: (IoU, mIoU). The first output is the per class IoU,
             for K classes it's numpy.ndarray with K elements. The second output,
-            is the mean IoU. The third output is the per class accuracy. The fourth
-            output is the overall accuracy.
+            is the mean IoU.
         """
         conf_matrix = self.conf_metric.value()
         if torch.is_tensor(conf_matrix):
@@ -267,15 +272,19 @@ class IoU(Metric):
             acc = true_positive / np.sum(conf_matrix, 1)
 
         all_acc = true_positive.sum() / conf_matrix.sum()
+        # metrics = {'IoU': iou, 'mIoU': float(iou[1] * 100), 'Acc': acc, 'OA': all_acc * 100}
 
         metrics = {'IoU': iou, 'mIoU': np.nanmean(iou) * 100, 'Acc': acc, 'OA': all_acc * 100}
+
         return metrics
 
     def get_miou_acc(self):
         conf_matrix = self.conf_metric.value()
         if torch.is_tensor(conf_matrix):
             conf_matrix = conf_matrix.cpu().numpy()
-
+        if self.ignore_index is not None:
+            conf_matrix[:, self.ignore_index] = 0
+            conf_matrix[self.ignore_index, :] = 0
         true_positive = np.diag(conf_matrix)
         false_positive = np.sum(conf_matrix, 0) - true_positive
         false_negative = np.sum(conf_matrix, 1) - true_positive
@@ -283,9 +292,7 @@ class IoU(Metric):
         # Just in case we get a division by 0, ignore/hide the error
         with np.errstate(divide='ignore', invalid='ignore'):
             iou = true_positive / (true_positive + false_positive + false_negative)
-
         miou = float(np.nanmean(iou) * 100)
         acc = float(np.diag(conf_matrix).sum() / conf_matrix.sum() * 100)
 
         return miou, acc
-

@@ -1,29 +1,35 @@
 import os
 import shutil
 import torch
-
 from pathlib import Path
 from torch import nn
 from torch.nn import init
 
 from utils.distributed_utils import logger
 
+
 def get_model(config):
 
-    if config.BACKBONE == "segformer":
-        from models.Segformer.segformer import SegFormer
-        base_model = SegFormer(num_classes=2, phi='b0', pretrained=True)
+    if config.BACKBONE == "uvmamba":
+        from models.model import UVMamba
+        base_model = UVMamba(config)
 
-    elif config.BACKBONE == "exchanger_unet":
-        from src.backbones.exchanger.models import ExchangerUnet
-        base_model = ExchangerUnet(config, mode='train_val')
-    elif config.BACKBONE == "exchanger_maskformer":
-        from src.backbones.exchanger.models import ExchangerMaskformer
-        base_model = ExchangerMaskformer(config, mode='train_val')
-    elif config.BACKBONE == "TSViT":
-        from src.backbones.TSViT.TSViT import TSViTDiffusion
-        model_config = config.MODEL
-        base_model = TSViTDiffusion(model_config)
+    elif config.BACKBONE == "uvmamba_no_deform":
+        from models.model import UVMambaNoDeform
+        base_model = UVMambaNoDeform(config)
+
+    elif config.BACKBONE == "uvmamba_no_ssm":
+        from models.model import UVMambaNoSSM
+        base_model = UVMambaNoSSM(config)
+
+    elif config.BACKBONE == "uvmamba_parallel":
+        from models.model import UVMambaParallel
+        base_model = UVMambaParallel(config)
+
+    elif config.BACKBONE == "uvmamba_reverse":
+        from models.model import UVMambaReverse
+        base_model = UVMambaReverse(config)
+
     else:
         raise NotImplementedError
 
@@ -103,9 +109,9 @@ def init_weights(module):
             else:
                 init.normal_(param.data)
 
+
 def load_weights(model, checkpoint_path):
     model.load_state_dict(torch.load(checkpoint_path)["module"], strict=False)
-    # self.load_state_dict(torch.load(checkpoint_path), strict=False)
 
 
 def save_state_dict(model, path, save_total_limit):

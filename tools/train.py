@@ -2,6 +2,7 @@ import argparse
 import deepspeed
 import warnings
 import yaml
+import pickle
 from addict import Dict
 from utils.file_utils import *
 from utils.dataset_utils import *
@@ -11,9 +12,7 @@ from utils.model_runner import run_iterate, init_random_seed
 from utils.distributed_utils import get_dist_info, all_metrics_reduce, dist_barrier, logger
 
 from utils.dataset_utils import get_dataset, build_uv_dataloader
-# from src.losses import get_loss
-
-# from src.utils.lr_scheduler import build_schduler
+from utils.loss_function import get_loss
 
 def main(config):
     start_epoch = 1
@@ -49,46 +48,35 @@ def main(config):
         test_sampler = data.distributed.DistributedSampler(dt_test, shuffle=False, drop_last=False)
 
     train_loader = build_uv_dataloader(dt_train, world_size, dataset_config, (train_sampler is None), False,
-                                         sampler=train_sampler)
+                                            sampler=train_sampler)
     val_loader = build_uv_dataloader(dt_val, world_size, dataset_config, False, False,
-                                         sampler=val_sampler)
+                                            sampler=val_sampler)
     test_loader = build_uv_dataloader(dt_test, world_size, dataset_config, False, False,
-                                          sampler=test_sampler)
+                                            sampler=test_sampler)
     # Model definition
     model = get_model(config)
-    # model.apply(init_weights)
+    model.apply(init_weights)
 
     logger.info(model)
 
-
     # Load weights from pre-trained models
-    # if config.fine_tune:
-    #     assert os.path.isfile(config.PRETRAINED), f'the path of pretrained model {config.PRETRAINED}" is not valid!!'
-    #     model_state_file = config.PRETRAINED
-    #     logger.info(f'=> Loading model from {model_state_file}')
-    #     pretrain_dict = torch.load(model_state_file)['state_dict']
-    #     with open('exchanger_weight/exchanger_dict.pkl', 'rb') as file:
-    #         loaded_exchanger_dict = pickle.load(file)
-    #
-    #     pretrained_dict = {'base_model.' + k: v for k, v in pretrain_dict.items()
-    #                        if k in loaded_exchanger_dict.keys()}
-    #     model_dict = model.state_dict()
-    #     pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict.keys()}
-    #     for k in pretrained_dict.keys():
-    #         logger.info(f'=> Loading {k} from pretrained model')
-    #     model_dict.update(pretrained_dict)
-    #     model.load_state_dict(model_dict)
+    if config.fine_tune:
+        assert os.path.isfile(config.PRETRAINED), f'the path of pretrained model {config.PRETRAINED}" is not valid!!'
+        model_weights_file = config.PRETRAINED
+        with open(model_weights_file, 'rb') as file:
+            loaded_backbone_dict = pickle.load(file)
+
+        model_dict = model.state_dict()
+        pretrained_dict = {k: v for k, v in loaded_backbone_dict.items() if k in model_dict.keys()}
+        for k in pretrained_dict.keys():
+            logger.info(f'=> Loading {k} from pretrained model')
+        model_dict.update(pretrained_dict)
+        model.load_state_dict(model_dict)
 
     model = model.to(device)
 
     with open(os.path.join(config.PATH.res_dir, "conf.json"), "w") as file:
         file.write(json.dumps(vars(config), indent=4))
-
-    # optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.0)
-    # scheduler = build_schduler(config, optimizer, len(train_loader))
-    #
-    # model, optimizer, _, lr_scheduler = deepspeed.initialize(
-    #     args=config, model=model, model_parameters=model.parameters(), optimizer=optimizer, lr_scheduler=scheduler)
 
     # Initialize the model
     model, optimizer, _, scheduler = deepspeed.initialize(
@@ -112,8 +100,7 @@ def main(config):
     logger.info(f"trainable params: {trainable_params} || all params: {all_params} "
                 f"|| trainable (%): {trainable_params / all_params * 100}")
 
-    # criterion = get_loss(config, device=device)
-    criterion = nn.CrossEntropyLoss()
+    criterion = get_loss(dataset_config)
 
     # Training loop
     trainlog = {}
@@ -171,7 +158,6 @@ def main(config):
             trainlog[epoch] = {**train_metrics}
             checkpoint(trainlog, config.PATH)
 
-    # 保存最后训练的模型
     model.save_checkpoint(checkpoint_path)
 
     logger.info(f"***** Running testing *****")
@@ -207,10 +193,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_file',
                         type=str,
-                        default="config/uv/segformer/segformer_xian.yaml",
+                        default="config/uv/uvmamba_beijing.yaml",
                         help='Configuration (.json) file to use')
     parser.add_argument('--rdm_seed', type=int, default=None, help='Random seed')
-    parser.add_argument('--local_rank', type=int, default=-1,
+    parser.add_argument('--local_rank', type=int, default=0,
                         help='Specifying the default GPU')
     parser.add_argument('--auto_resume', action='store_true',
                         help='Resume from the latest checkpoint automatically.')
