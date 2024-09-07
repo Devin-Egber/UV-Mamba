@@ -148,7 +148,7 @@
       <div class="columns is-centered">
         <div class="column">
           <div class="content">
-            <img src="asserts/architecture.png" alt="method"/>
+            <img src="asserts/architecture.jpg" alt="method"/>
           </div>
       </div>
     </div>
@@ -195,17 +195,13 @@
           <h2 class="title is-3">Abstract</h2>
           <div class="content has-text-justified">
             <p>
-			Owing to the diverse geographical environments, intricate landscapes, and high-density settlements,
-			the automatic identification of urban village boundaries using remote sensing images is a highly challenging task.
-			This paper proposes a novel and efficient neural network model called UV-Mamba for accurate boundary detection in high-resolution
-			remote sensing images. UV-Mamba mitigates the memory loss problem in long sequence modeling,
-			which arises in state space model (SSM) with increasing image size, by incorporating deformable convolutions (DCN).
-			Its architecture utilizes an encoder-decoder framework and includes an encoder with four deformable state space augmentation blocks for
-			efficient multi-level semantic extraction and a decoder to integrate the extracted semantic information.
-			We conducted experiments on the Beijing and Xi'an datasets, and the results show that UV-Mamba achieves state-of-the-art performance.
-			Specifically, our model achieves 73.3% and 78.1% IoU on the Beijing and Xi'an datasets, respectively,
-			representing improvements of 1.2% and 3.4% IoU over the previous best model,
-			while also being 6x faster in inference speed and 40x smaller in parameter count.
+			Due to the diverse geographical environments, intricate landscapes, and high-density settlements,
+            the automatic identification of urban village boundaries using remote sensing images remains a highly challenging task.
+            This paper proposes a novel and efficient neural network model called UV-Mamba for accurate boundary detection in high-resolution remote sensing images.
+            UV-Mamba mitigates the memory loss problem in lengthy sequence modeling, which arises in state space models with increasing image size, by incorporating deformable convolutions.
+            Its architecture utilizes an encoder-decoder framework and includes an encoder with four deformable state space augmentation blocks for efficient multi-level semantic extraction and a decoder to integrate the extracted semantic information.
+            We conducted experiments on two large datasets showing that UV-Mamba achieves state-of-the-art performance.
+            Specifically, our model achieves 73.3% and 78.1% IoU on the Beijing and Xi'an datasets, respectively, representing improvements of 1.2% and 3.4% IoU over the previous best model while also being 6× faster in inference speed and 40× smaller in parameter count.
 			Source code and pre-trained models are available at <a href="https://github.com/Devin-Egber/UV-Mamba">https://github.com/Devin-Egber/UV-Mamba</a>.
             </p>
           </div>
@@ -216,19 +212,18 @@
   <!-- End paper abstract -->
 
 
-  <!-- Method -->
-  <!-- <section class="section" id="method">
+  <!-- CAM -->
+  <section class="section" id="CAM">
     <div class="container is-max-desktop">
       <div class="columns is-centered has-text-centered">
         <div class="column is-four-fifths">
-          <h2 class="title is-3">Method Overview</h2>
+          <h2 class="title is-3">Class Activation Map</h2>
           <div class="content has-text-justified">
-            <center>
               <table align=center width=850px>
                 <tr>
                   <td width=850px>
                     <center>
-                      <img class="round" style="width:850px" src="image/README/pmaa.png" />
+                      <img class="round" style="width:850px" src="asserts/cam.jpg" />
                     </center>
                   </td>
                 </tr>
@@ -236,20 +231,18 @@
               <table align=center width=850px>
                 <tr>
                   <td>
-                    Overview of our proposed high-performance cloud removal autoencoder. In the encoder, we downsample
-                    the input image $N$ times. Then, the multi-scale features are fused by averaging pooling and
-                    summation operations. A simplified transformer layer processes the fused features to obtain global
-                    attention, which is used to modulate the multi-scale features. In the reconstruction process
-                    (decoder), we use the local interaction module to recover more details.
+                    We employ Class Activation Maps (CAM) to visualize the decision-making process of the convolutional neural network in image classification tasks.
+                    Specifically, we compute a weighted sum over the convolutional feature maps from the network's final layer to generate a heatmap that highlights the regions of the input image most relevant to the model’s prediction for a given class.
+                    As shown in the figure, red regions denote areas with a higher impact on the prediction, whereas blue regions indicate lesser influence.
+                    These visualizations enable us to identify the key regions the model attends to and reveal potential biases in its decision-making process.
                   </td>
                 </tr>
               </table>
-            </center>
           </div>
         </div>
       </div>
     </div>
-  </section> -->
+  </section>
   <!-- End Method -->
 
   <!-- Results -->
