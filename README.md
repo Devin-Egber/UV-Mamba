@@ -2,9 +2,9 @@
 <h1 align="center">UV-Mamba: A DCN-Enhanced State Space Model for Urban Village Boundary Identification inHigh-Resolution Remote Sensing Images</h1>
 
 <p align="center">
-    <a href="https://blog.csdn.net/qq_42951560">Lulin Li<sup>1,*</sup></a>,
-    <a href="https://cslikai.cn/">Ben Chen<sup>1,*</sup></a>,
-    <a href="https://blog.csdn.net/qq_42951560">Xuechao Zou<sup>2,*</sup></a>,
+    <a href="https://github.com/Devin-Egber">Lulin Li<sup>1,*</sup></a>,
+    <a href="https://github.com/BastianChen">Ben Chen<sup>1,*</sup></a>,
+    <a href="https://blog.csdn.net/qq_42951560">Xuechao Zou<sup>2</sup></a>,
     <a href="https://www.cs.tsinghua.edu.cn/info/1116/5088.htm">Junliang Xing<sup>3</sup></a>,
     <a href="https://www.cs.tsinghua.edu.cn/info/1117/3542.htm">Pin Tao<sup>1,3,†</sup></a>
 </p>
