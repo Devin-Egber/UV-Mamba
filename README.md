@@ -19,7 +19,7 @@
   <p align="center">
     <a href="https://arxiv.org/abs/2409.03431">Paper Preprint </a>
     |
-    <a href="devin-egber.github.io/UV-Mamba/">Project Page</a>
+    <a href="https://devin-egber.github.io/UV-Mamba/">Project Page</a>
 </p>
 
 
