@@ -40,14 +40,14 @@ Specifically, our model achieves 73.3% and 78.1% IoU on the Beijing and Xi'an da
 
 ## Installation
 
-clone the repository
+1. clone the repository
 
 ```bash
 git clone https://github.com/Devin-Egber/UV-Mamba.git && cd UV-Mamba
-conda env create -f uvmamba.yml
+conda env create -f uvmamba.yaml
 conda activate uvmamba
 ```
-
+2. The installation of the Mamba follows [Vmamba](https://github.com/MzeroMiko/VMamba)
 
 ## Datasets Preparation
 
@@ -96,6 +96,9 @@ bash tools/test.sh
 </p>
 
 ## Class Activation Map
+
+The visualization is plotted by the [Grad-CAM](https://github.com/jacobgil/pytorch-grad-cam) project.
+
 <p align="center">
     <img src="asserts/cam.jpg">
 </p>
